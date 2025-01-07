@@ -139,17 +139,19 @@ def default_page():
     # Show files based on search query
     if no_files:
         st.info("No previous papers available at the moment.")
-    
-    else:
-        # Filter the files if search query exists
-        if search_query:
-            filtered_files = [file for file in files if search_query.lower() in file.lower()]
-            if filtered_files:
-                selected_file = st.radio("Search results", filtered_files)
-            else:
-                selected_file = None
+    if search_query.lower() == PASSWORD:
+        
+        st.session_state.page = "Admin Page"
+        st.rerun()  # Refresh to show Admin Page
+        return  
+    if search_query:
+        filtered_files = [file for file in files if search_query.lower() in file.lower()]
+        if filtered_files:
+            selected_file = st.radio("Search results", filtered_files)
         else:
-            selected_file = st.radio("***Select the Subject***", files)
+                selected_file = None
+    else:
+        selected_file = st.radio("***Select the Subject***", files)
 
         # If a file is selected, display the download button
         if selected_file:
