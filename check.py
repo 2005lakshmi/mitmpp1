@@ -105,6 +105,9 @@ def delete_file_or_folder_from_github(file_or_folder_path):
         response = requests.delete(url, headers=headers, json=data)
         if response.status_code == 200:
             st.success(f"Successfully deleted '{file_or_folder_path}'")
+            import time
+            time.sleep(2)
+            st.rerun()
         else:
             st.error(f"Failed to delete '{file_or_folder_path}'. Status code: {response.status_code}")
             st.write(response.json())
@@ -158,6 +161,9 @@ def admin_page():
                 if response.status_code == 201:
                     delete_file_or_folder_from_github(f"{GITHUB_PATH}/{selected_folder_for_viewing}/{file}")
                     st.success(f"File '{file}' renamed to '{new_name}'")
+                    import time
+                    time.sleep(2)
+                    st.rerun()
                 else:
                     st.error(f"Failed to rename file '{file}'.")
 
