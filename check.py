@@ -128,7 +128,7 @@ def admin_page():
             st.warning("Please enter a valid folder name.")
 
     # Step 2: Upload Files
-    st.subheader("Upload Files to a Folder")
+    st.subheader("***Upload Files to a Folder(subject)***")
     folder_name_to_upload = st.selectbox("**Select folder** ***to upload files***", get_folders_from_github())
     if folder_name_to_upload:
         upload_files_to_github(folder_name_to_upload)
