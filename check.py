@@ -180,7 +180,7 @@ def admin_page():
 
 # Default page to display files from GitHub (as subjects)
 def default_page():
-    st.title(":red[Previous Papers] :blue[(2023-24)]")
+    st.title(":blue[Previous] Papers :green[(2023-24)]")
 
     # Search functionality for admin to enter a subject or search
     search_query = st.text_input("Search Subject Here...", type="password")
@@ -195,10 +195,10 @@ def default_page():
     folder_list = get_folders_from_github()
     if folder_list:
         # Radio button for folder selection (only one folder at a time)
-        selected_folder = st.radio("Select a subject folder to view files", folder_list)
+        selected_folder = st.radio("**Select Subject to View Files", folder_list)
         files = get_files_from_github(selected_folder)
         if files:
-            st.subheader(f"Files in folder '{selected_folder}':")
+            st.subheader(f" **{selected_folder}** ' uploded files are: ")
             for file in files:
                 st.write(file)
 
