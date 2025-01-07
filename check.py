@@ -97,7 +97,7 @@ def default_page():
     folder_list = get_files_from_github()
 
     # Option 1: Search functionality (optional)
-    search_query = st.text_input("Search Subject Here...", type="text")
+    search_query = st.text_input("Search Subject Here...", type="password")
     
     if search_query:
         filtered_files = [file for file in folder_list if search_query.lower() in file.lower()]
