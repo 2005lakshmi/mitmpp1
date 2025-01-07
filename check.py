@@ -94,45 +94,25 @@ def delete_file_or_folder_from_github(file_or_folder_path):
         "Authorization": f"token {GITHUB_TOKEN}",
     }
 
-    # Fetch the file or folder info
     response = requests.get(url, headers=headers)
-
     if response.status_code == 200:
         file_info = response.json()
-        
-        # If response is a list (folder containing files)
-        if isinstance(file_info, list):
-            # This is a folder, and we need to delete its contents first
-            for file in file_info:
-                if file['type'] == 'file':  # Only delete files, not directories
-                    file_path = file['path']
-                    delete_file_or_folder_from_github(file_path)
-            # Now delete the folder itself (this will also remove its contents)
-            st.success(f"Folder '{file_or_folder_path}' is empty now.")
-            return
-        
-        # Now handle if the response is a dictionary for a single file
-        if isinstance(file_info, dict) and 'sha' in file_info:
-            sha = file_info['sha']
-            data = {
-                "message": f"Delete {file_or_folder_path}",
-                "sha": sha
-            }
-            response = requests.delete(url, headers=headers, json=data)
-            if response.status_code == 200:
-                st.success(f"Successfully deleted '{file_or_folder_path}'")
-                import time
-                time.sleep(2)
-                st.rerun()
-            else:
-                st.error(f"Failed to delete '{file_or_folder_path}'. Status code: {response.status_code}")
-                st.write(response.json())
+        sha = file_info['sha']
+        data = {
+            "message": f"Delete {file_or_folder_path}",
+            "sha": sha
+        }
+        response = requests.delete(url, headers=headers, json=data)
+        if response.status_code == 200:
+            st.success(f"Successfully deleted '{file_or_folder_path}'")
+            import time
+            time.sleep(2)
+            st.rerun()
         else:
-            st.error(f"File/Folder not found: {file_or_folder_path}")
-            st.write(file_info)
+            st.error(f"Failed to delete '{file_or_folder_path}'. Status code: {response.status_code}")
+            st.write(response.json())
     else:
-        st.error(f"Failed to fetch file/folder info. Status code: {response.status_code}")
-        st.write(response.json())
+        st.error(f"File/Folder not found: {file_or_folder_path}")
 
 # Admin page to upload files, rename, and delete files or folders
 def admin_page():
@@ -203,23 +183,24 @@ def default_page():
     st.title(":blue[Previous] Papers :green[(2023-24)]")
 
     # Search functionality for admin to enter a subject or search
-    search_query = st.text_input("Search Subject Here...", type="password")
+    search_query = st.text_input("Search Subject Here...")
 
-    # Check if the entered query matches the password
-    if search_query == PASSWORD:
-        st.session_state.page = "Admin Page"
-        st.success("Password correct! Redirecting to Admin Page...")
-        st.rerun()
-
-    # Display available subjects (folders)
+    # Fetch the folder list from GitHub
     folder_list = get_folders_from_github()
-    if folder_list:
+
+    # Filter folder list based on the search query
+    if search_query:
+        filtered_folders = [folder for folder in folder_list if search_query.lower() in folder.lower()]
+    else:
+        filtered_folders = folder_list
+
+    if filtered_folders:
         # Radio button for folder selection (only one folder at a time)
-        selected_folder = st.radio("**Select Subject to View Files**", folder_list)
+        selected_folder = st.radio("**Select Subject to View Files**", filtered_folders)
         files = get_files_from_github(selected_folder)
         if files:
             st.subheader(f" ***{selected_folder}***")
-            st.write("***uploded files are...***")
+            st.write("***Uploaded files are...***")
             for file in files:
                 st.write(file)
 
@@ -243,7 +224,7 @@ def default_page():
                     mime=mime_type
                 )
     else:
-        st.info("No subjects available at the moment.")
+        st.info("No subjects available matching the search query.")
 
 # Main function for page navigation
 def main():
