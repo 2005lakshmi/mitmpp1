@@ -88,9 +88,33 @@ def get_files_from_github(folder_name):
         st.error(f"Failed to fetch files from GitHub. Status code: {response.status_code}")
         return []
 
-# Admin page to upload files to GitHub
+# Function to delete a file or folder from GitHub
+def delete_file_or_folder_from_github(file_or_folder_path):
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{file_or_folder_path}"
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+    }
+
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        file_info = response.json()
+        sha = file_info['sha']
+        data = {
+            "message": f"Delete {file_or_folder_path}",
+            "sha": sha
+        }
+        response = requests.delete(url, headers=headers, json=data)
+        if response.status_code == 200:
+            st.success(f"Successfully deleted '{file_or_folder_path}'")
+        else:
+            st.error(f"Failed to delete '{file_or_folder_path}'. Status code: {response.status_code}")
+            st.write(response.json())
+    else:
+        st.error(f"File/Folder not found: {file_or_folder_path}")
+
+# Admin page to upload files, rename, and delete files or folders
 def admin_page():
-    st.title("Admin Page - Manage Files")
+    st.title("Admin Page - Manage Files and Folders")
 
     # Step 1: Folder Creation
     st.subheader("Create a Folder")
@@ -107,16 +131,47 @@ def admin_page():
     if folder_name_to_upload:
         upload_files_to_github(folder_name_to_upload)
 
-    # Step 3: List Files in a Selected Folder
+    # Step 3: View Files in Selected Folder
     st.subheader("View and Manage Files in a Folder")
     folder_list = get_folders_from_github()
     selected_folder_for_viewing = st.selectbox("Select a folder to view files", folder_list)
+    
     if selected_folder_for_viewing:
         files = get_files_from_github(selected_folder_for_viewing)
         st.subheader(f"Files in folder '{selected_folder_for_viewing}':")
         for file in files:
             st.write(file)
-            # You can add additional functionality to delete or rename files here as needed
+            
+            # Rename file option
+            new_name = st.text_input(f"Rename {file}", "")
+            if new_name and st.button(f"Rename {file}"):
+                new_file_url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{selected_folder_for_viewing}/{new_name}"
+                file_url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{selected_folder_for_viewing}/{file}"
+                encoded_contents = base64.b64encode(requests.get(file_url).content).decode("utf-8")
+                data = {
+                    "message": f"Rename {file} to {new_name}",
+                    "content": encoded_contents,
+                }
+                headers = {
+                    "Authorization": f"token {GITHUB_TOKEN}",
+                }
+                response = requests.put(new_file_url, json=data, headers=headers)
+                if response.status_code == 201:
+                    delete_file_or_folder_from_github(f"{GITHUB_PATH}/{selected_folder_for_viewing}/{file}")
+                    st.success(f"File '{file}' renamed to '{new_name}'")
+                else:
+                    st.error(f"Failed to rename file '{file}'.")
+
+            # Delete file option
+            if st.button(f"Delete {file}"):
+                delete_file_or_folder_from_github(f"{GITHUB_PATH}/{selected_folder_for_viewing}/{file}")
+
+    # Step 4: Delete Folder (Warning: This will delete all files in the folder)
+    st.subheader("Delete Folder")
+    folder_to_delete = st.selectbox("Select a folder to delete", get_folders_from_github())
+    if folder_to_delete:
+        if st.button(f"Delete Folder '{folder_to_delete}'"):
+            delete_file_or_folder_from_github(f"{GITHUB_PATH}/{folder_to_delete}")
 
 # Default page to display files from GitHub (as subjects)
 def default_page():
@@ -134,9 +189,9 @@ def default_page():
     # Display available subjects (folders)
     folder_list = get_folders_from_github()
     if folder_list:
-        # Single folder selection using selectbox
-        selected_folder = st.selectbox("Select a subject folder to view files", folder_list)
-        if selected_folder:
+        # Checkbox for folder selection
+        selected_folders = st.multiselect("Select a subject folder to view files", folder_list)
+        for selected_folder in selected_folders:
             files = get_files_from_github(selected_folder)
             st.subheader(f"Files in folder '{selected_folder}':")
             for file in files:
@@ -148,8 +203,6 @@ def default_page():
                     file_name=file,
                     mime="application/octet-stream"
                 )
-        else:
-            st.info("Please select a subject to view its files.")
     else:
         st.info("No subjects available at the moment.")
 
