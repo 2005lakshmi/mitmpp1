@@ -94,25 +94,45 @@ def delete_file_or_folder_from_github(file_or_folder_path):
         "Authorization": f"token {GITHUB_TOKEN}",
     }
 
+    # Fetch the file or folder info
     response = requests.get(url, headers=headers)
+
     if response.status_code == 200:
         file_info = response.json()
-        sha = file_info['sha']
-        data = {
-            "message": f"Delete {file_or_folder_path}",
-            "sha": sha
-        }
-        response = requests.delete(url, headers=headers, json=data)
-        if response.status_code == 200:
-            st.success(f"Successfully deleted '{file_or_folder_path}'")
-            import time
-            time.sleep(2)
-            st.rerun()
+        
+        # If response is a list (folder containing files)
+        if isinstance(file_info, list):
+            # This is a folder, and we need to delete its contents first
+            for file in file_info:
+                if file['type'] == 'file':  # Only delete files, not directories
+                    file_path = file['path']
+                    delete_file_or_folder_from_github(file_path)
+            # Now delete the folder itself (this will also remove its contents)
+            st.success(f"Folder '{file_or_folder_path}' is empty now.")
+            return
+        
+        # Now handle if the response is a dictionary for a single file
+        if isinstance(file_info, dict) and 'sha' in file_info:
+            sha = file_info['sha']
+            data = {
+                "message": f"Delete {file_or_folder_path}",
+                "sha": sha
+            }
+            response = requests.delete(url, headers=headers, json=data)
+            if response.status_code == 200:
+                st.success(f"Successfully deleted '{file_or_folder_path}'")
+                import time
+                time.sleep(2)
+                st.rerun()
+            else:
+                st.error(f"Failed to delete '{file_or_folder_path}'. Status code: {response.status_code}")
+                st.write(response.json())
         else:
-            st.error(f"Failed to delete '{file_or_folder_path}'. Status code: {response.status_code}")
-            st.write(response.json())
+            st.error(f"File/Folder not found: {file_or_folder_path}")
+            st.write(file_info)
     else:
-        st.error(f"File/Folder not found: {file_or_folder_path}")
+        st.error(f"Failed to fetch file/folder info. Status code: {response.status_code}")
+        st.write(response.json())
 
 # Admin page to upload files, rename, and delete files or folders
 def admin_page():
