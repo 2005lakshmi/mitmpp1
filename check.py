@@ -124,13 +124,14 @@ def default_page():
     st.title(":red[Previous Papers] :blue[(2023-24)]")
 
     # Always show the search input box for admin to enter a subject or search
-    search_query = st.text_input("Search Subject Here...")
+    search_query = st.text_input("Search Subject Here...", type = "password")
 
     # Check if the entered query matches the password
     if search_query == PASSWORD:
         # If the entered password matches, navigate to the Admin Page
         st.session_state.page = "Admin Page"
         st.success("Password correct! Redirecting to Admin Page...")
+        st.rerun()
         return
 
     # Get the list of files
@@ -139,11 +140,7 @@ def default_page():
     # Show files based on search query
     if no_files:
         st.info("No previous papers available at the moment.")
-    if search_query.lower() == PASSWORD:
-        
-        st.session_state.page = "Admin Page"
-        st.rerun()  # Refresh to show Admin Page
-        return  
+    
     if search_query:
         filtered_files = [file for file in files if search_query.lower() in file.lower()]
         if filtered_files:
