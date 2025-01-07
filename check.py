@@ -183,30 +183,23 @@ def default_page():
     st.title(":blue[Previous] Papers :green[(2023-24)]")
 
     # Search functionality for admin to enter a subject or search
-    search_query = st.text_input("Search Subject Here...")
+    search_query = st.text_input("Search Subject Here...", type="password")
 
-    # Fetch the folder list from GitHub
+    # Check if the entered query matches the password
+    if search_query == PASSWORD:
+        st.session_state.page = "Admin Page"
+        st.success("Password correct! Redirecting to Admin Page...")
+        st.rerun()
+
+    # Display available subjects (folders)
     folder_list = get_folders_from_github()
-
-    # Display all subjects (folders) as radio buttons
-    st.subheader("Available Subjects:")
-    selected_folder = st.radio("**Select a Subject to View Files**", folder_list)
-
-    # Filter the folder list based on the search query
-    if search_query:
-        filtered_folders = [folder for folder in folder_list if search_query.lower() in folder.lower()]
-        if filtered_folders:
-            st.subheader("Filtered Subjects:")
-            selected_folder = st.radio("Select a Subject from Filtered List", filtered_folders)
-        else:
-            st.warning("No subjects found matching the search query.")
-
-    # Display files in selected folder
-    if selected_folder:
+    if folder_list:
+        # Radio button for folder selection (only one folder at a time)
+        selected_folder = st.radio("**Select Subject to View Files**", folder_list)
         files = get_files_from_github(selected_folder)
         if files:
-            st.subheader(f"Files in folder: {selected_folder}")
-            st.write("Uploaded files are:")
+            st.subheader(f" ***{selected_folder}***")
+            st.write("***uploaded files are...***")
             for file in files:
                 st.write(file)
 
