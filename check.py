@@ -10,7 +10,7 @@ GITHUB_PATH = "uploaded_files"  # The folder where files will be stored on GitHu
 
 PASSWORD = st.secrets["general"]["password"]  # Password from secrets.toml
 
-# Function to create a folder on GitHub (without .gitkeep)
+# Function to create a folder on GitHub (without .gitkeep) and insert null.txt
 def create_folder_on_github(folder_name):
     # Ensure folder_name doesn't end with a slash
     folder_name = folder_name.rstrip('/')
@@ -30,6 +30,23 @@ def create_folder_on_github(folder_name):
     
     if response.status_code == 201:
         st.success(f"Folder '{folder_name}' created successfully on GitHub!")
+
+        # Now create the null.txt file with content "null"
+        null_file_url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{folder_name}/null.txt"
+        null_file_content = base64.b64encode(b"null").decode("utf-8")  # base64 encode the content "null"
+
+        null_data = {
+            "message": "Add null.txt to the folder",
+            "content": null_file_content,
+        }
+        null_response = requests.put(null_file_url, json=null_data, headers=headers)
+
+        if null_response.status_code == 201:
+            st.success(f"File 'null.txt' created successfully in folder '{folder_name}'!")
+        else:
+            st.error(f"Failed to create 'null.txt' in folder '{folder_name}'. Status code: {null_response.status_code}")
+            st.write(null_response.json())
+
     else:
         st.error(f"Failed to create folder '{folder_name}'. Status code: {response.status_code}")
         st.write(response.json())
