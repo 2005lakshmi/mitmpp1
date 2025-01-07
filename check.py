@@ -178,6 +178,22 @@ def rename_folder_on_github(old_folder_name, new_folder_name):
     # After renaming files, delete the old folder
     delete_folder_from_github(old_folder_name)
 
+# Function to display files from a specific folder
+def display_files_in_folder_on_github(folder_name):
+    files = get_files_from_github(folder_name)
+    if files:
+        st.subheader(f"Files in folder '{folder_name}':")
+        for file in files:
+            st.write(file)
+            # You can add additional functionality to delete or rename files here as needed
+            if st.button(f"Delete {file}", key=f"delete_{file}"):
+                delete_file_from_github(folder_name, file)
+            new_file_name = st.text_input(f"Rename {file}", key=f"rename_{file}")
+            if new_file_name and st.button(f"Rename {file}"):
+                rename_file_on_github(folder_name, file, new_file_name)
+    else:
+        st.info(f"No files found in folder '{folder_name}'.")
+
 # Admin page to upload files to GitHub
 def admin_page():
     st.title("Admin Page - Manage Files")
@@ -189,54 +205,20 @@ def admin_page():
         if folder_name:
             create_folder_on_github(folder_name)
         else:
-            st.warning("Please enter a folder name.")
+            st.warning("Please enter a valid folder name.")
 
-    # Step 2: File Upload
-    st.subheader("Upload Files to an Existing Folder")
-    folder_list = get_folders_from_github()  # Get the list of folders created on GitHub
-    if folder_list:
-        selected_folder = st.selectbox("Select a folder to upload files", folder_list)
-        if selected_folder:
-            upload_files_to_github(selected_folder)
-    else:
-        st.warning("No folders available. Please create a folder first.")
+    # Step 2: Upload Files
+    st.subheader("Upload Files to a Folder")
+    folder_name_to_upload = st.selectbox("Select folder to upload files", get_folders_from_github())
+    if folder_name_to_upload:
+        upload_files_to_github(folder_name_to_upload)
 
     # Step 3: List Files in a Selected Folder
-    st.subheader("View and Manage Files in a Selected Folder")
+    st.subheader("View and Manage Files in a Folder")
     folder_list = get_folders_from_github()
-    if folder_list:
-        selected_folder_for_viewing = st.selectbox("Select a folder to view files", folder_list)
-        if selected_folder_for_viewing:
-            files_in_folder = get_files_from_github(selected_folder_for_viewing)
-            for file in files_in_folder:
-                st.write(file)
-                
-                # Rename file
-                new_file_name = st.text_input(f"Rename {file}", key=f"rename_{file}")
-                if new_file_name:
-                    if st.button(f"Rename {file}"):
-                        rename_file_on_github(selected_folder_for_viewing, file, new_file_name)
-
-                # Delete file
-                if st.button(f"Delete {file}"):
-                    delete_file_from_github(selected_folder_for_viewing, file)
-    else:
-        st.warning("No folders available to view files.")
-
-    # Step 4: Folder Management
-    st.subheader("Manage Folders")
-    folder_to_rename = st.selectbox("Select folder to rename", folder_list)
-    if folder_to_rename:
-        new_folder_name = st.text_input(f"New name for {folder_to_rename}", key="rename_folder")
-        if new_folder_name:
-            if st.button(f"Rename folder {folder_to_rename}"):
-                rename_folder_on_github(folder_to_rename, new_folder_name)
-
-    # Delete folder
-    folder_to_delete = st.selectbox("Select folder to delete", folder_list)
-    if folder_to_delete:
-        if st.button(f"Delete folder {folder_to_delete}"):
-            delete_folder_from_github(folder_to_delete)
+    selected_folder_for_viewing = st.selectbox("Select a folder to view files", folder_list)
+    if selected_folder_for_viewing:
+        display_files_in_folder_on_github(selected_folder_for_viewing)
 
 # Default page to display files from GitHub (as subjects)
 def default_page():
