@@ -124,7 +124,14 @@ def default_page():
     st.title(":red[Previous Papers] :blue[(2023-24)]")
 
     # Always show the search input box for admin to enter a subject or search
-    search_query = st.text_input("Search Subject Here...",type = "password")
+    search_query = st.text_input("Search Subject Here...")
+
+    # Check if the entered query matches the password
+    if search_query == PASSWORD:
+        # If the entered password matches, navigate to the Admin Page
+        st.session_state.page = "Admin Page"
+        st.success("Password correct! Redirecting to Admin Page...")
+        return
 
     # Get the list of files
     files, no_files = get_files_from_github()
