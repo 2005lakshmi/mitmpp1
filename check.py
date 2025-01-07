@@ -10,15 +10,14 @@ GITHUB_PATH = "uploaded_files"  # The folder where files will be stored on GitHu
 
 PASSWORD = st.secrets["general"]["password"]  # Password from secrets.toml
 
-# Function to create a folder on GitHub by uploading a placeholder file
+# Function to create a folder on GitHub (without .gitkeep)
 def create_folder_on_github(folder_name):
-    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{folder_name}/.gitkeep"
-    placeholder_content = "This is a placeholder to create the folder"
-    encoded_contents = base64.b64encode(placeholder_content.encode("utf-8")).decode("utf-8")
-
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{folder_name}/"
+    
+    # No placeholder content needed
     data = {
         "message": f"Create folder {folder_name}",
-        "content": encoded_contents,
+        "content": "",  # Leave content empty as we're not uploading any file
     }
     headers = {
         "Authorization": f"token {GITHUB_TOKEN}",
@@ -189,10 +188,10 @@ def default_page():
     # Display available subjects (folders)
     folder_list = get_folders_from_github()
     if folder_list:
-        # Checkbox for folder selection
-        selected_folders = st.multiselect("Select a subject folder to view files", folder_list)
-        for selected_folder in selected_folders:
-            files = get_files_from_github(selected_folder)
+        # Radio button for folder selection (only one folder at a time)
+        selected_folder = st.radio("Select a subject folder to view files", folder_list)
+        files = get_files_from_github(selected_folder)
+        if files:
             st.subheader(f"Files in folder '{selected_folder}':")
             for file in files:
                 st.write(file)
