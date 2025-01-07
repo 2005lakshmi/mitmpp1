@@ -12,7 +12,10 @@ PASSWORD = st.secrets["general"]["password"]  # Password from secrets.toml
 
 # Function to create a folder on GitHub (without .gitkeep)
 def create_folder_on_github(folder_name):
-    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{folder_name}/"
+    # Ensure folder_name doesn't end with a slash
+    folder_name = folder_name.rstrip('/')
+
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{folder_name}"
     
     # No placeholder content needed
     data = {
@@ -219,7 +222,7 @@ def default_page():
         files = get_files_from_github(selected_folder)
         if files:
             st.subheader(f" ***{selected_folder}***")
-            st.write("***uploded files are...***")
+            st.write("***uploaded files are...***")
             for file in files:
                 st.write(file)
 
