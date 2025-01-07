@@ -5,7 +5,7 @@ import streamlit as st
 
 # GitHub token from secrets.toml
 GITHUB_TOKEN = st.secrets["github"]["token"]
-GITHUB_REPO = "username/repo"  # Replace with your GitHub repository name
+GITHUB_REPO = "2005lakshmi/mitmpp1"  # Replace with your GitHub repository name
 GITHUB_PATH = "uploaded_files"  # The folder where files will be stored on GitHub
 
 PASSWORD = st.secrets["general"]["password"]  # Password from secrets.toml
