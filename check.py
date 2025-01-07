@@ -12,14 +12,10 @@ PASSWORD = st.secrets["general"]["password"]  # Password from secrets.toml
 
 # Function to create a folder on GitHub by uploading a placeholder file
 def create_folder_on_github(folder_name):
-    # Correct path to the folder and the file that will be used to create the folder
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{folder_name}/.gitkeep"
     placeholder_content = "This is a placeholder to create the folder"
-    
-    # Base64 encode the placeholder content
     encoded_contents = base64.b64encode(placeholder_content.encode("utf-8")).decode("utf-8")
 
-    # Payload for the request
     data = {
         "message": f"Create folder {folder_name}",
         "content": encoded_contents,
@@ -28,7 +24,6 @@ def create_folder_on_github(folder_name):
         "Authorization": f"token {GITHUB_TOKEN}",
     }
 
-    # Send the request to GitHub API to upload the placeholder file
     response = requests.put(url, json=data, headers=headers)
     
     if response.status_code == 201:
@@ -79,8 +74,8 @@ def get_folders_from_github():
         st.write(response.json())
         return []
 
-# Function to display files inside a folder on GitHub
-def display_files_in_folder_on_github(folder_name):
+# Function to get the list of files in a specific folder on GitHub
+def get_files_from_github(folder_name):
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{folder_name}"
     headers = {
         "Authorization": f"token {GITHUB_TOKEN}",
@@ -88,25 +83,100 @@ def display_files_in_folder_on_github(folder_name):
 
     response = requests.get(url, headers=headers)
     if response.status_code == 200:
-        files = response.json()
-        if not files:
-            st.warning(f"No files found in folder '{folder_name}'")
-        else:
-            for file in files:
-                file_name = file['name']
-                file_url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/{GITHUB_PATH}/{folder_name}/{file_name}"
-                
-                # Display file name and download button
-                st.write(file_name)
-                st.download_button(
-                    label=f"Download {file_name}",
-                    data=requests.get(file_url).content,
-                    file_name=file_name,
-                    mime="application/octet-stream"
-                )
+        return [file['name'] for file in response.json()]
     else:
         st.error(f"Failed to fetch files from GitHub. Status code: {response.status_code}")
+        return []
+
+# Function to delete a file from a specific folder on GitHub
+def delete_file_from_github(folder_name, file_name):
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{folder_name}/{file_name}"
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+    }
+
+    # Get the SHA of the file to delete
+    file_info = requests.get(url, headers=headers).json()
+    sha = file_info['sha']
+
+    data = {
+        "message": f"Delete {file_name}",
+        "sha": sha
+    }
+
+    response = requests.delete(url, json=data, headers=headers)
+    
+    if response.status_code == 200:
+        st.success(f"File '{file_name}' deleted successfully!")
+    else:
+        st.error(f"Failed to delete file '{file_name}'. Status code: {response.status_code}")
         st.write(response.json())
+
+# Function to delete a folder by deleting its `.gitkeep` file
+def delete_folder_from_github(folder_name):
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{folder_name}/.gitkeep"
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+    }
+
+    file_info = requests.get(url, headers=headers).json()
+    sha = file_info['sha']
+
+    data = {
+        "message": f"Delete folder {folder_name}",
+        "sha": sha
+    }
+
+    response = requests.delete(url, json=data, headers=headers)
+    
+    if response.status_code == 200:
+        st.success(f"Folder '{folder_name}' deleted successfully!")
+    else:
+        st.error(f"Failed to delete folder '{folder_name}'. Status code: {response.status_code}")
+        st.write(response.json())
+
+# Function to rename a file on GitHub
+def rename_file_on_github(folder_name, old_file_name, new_file_name):
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{folder_name}/{old_file_name}"
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+    }
+
+    # Get the SHA of the file to rename
+    file_info = requests.get(url, headers=headers).json()
+    sha = file_info['sha']
+
+    # Upload the file with a new name
+    new_file_url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{folder_name}/{new_file_name}"
+    encoded_contents = base64.b64encode(file_info['content'].encode("utf-8")).decode("utf-8")
+
+    data = {
+        "message": f"Rename {old_file_name} to {new_file_name}",
+        "content": encoded_contents,
+        "sha": sha
+    }
+
+    response = requests.put(new_file_url, json=data, headers=headers)
+    
+    if response.status_code == 201:
+        # Now delete the old file
+        delete_file_from_github(folder_name, old_file_name)
+        st.success(f"File '{old_file_name}' renamed to '{new_file_name}'!")
+    else:
+        st.error(f"Failed to rename file. Status code: {response.status_code}")
+        st.write(response.json())
+
+# Function to rename a folder on GitHub (by moving files)
+def rename_folder_on_github(old_folder_name, new_folder_name):
+    files = get_files_from_github(old_folder_name)
+    for file in files:
+        # Move files to the new folder
+        old_file_path = f"{old_folder_name}/{file}"
+        new_file_path = f"{new_folder_name}/{file}"
+        rename_file_on_github(old_folder_name, file, new_file_path)
+
+    # After renaming files, delete the old folder
+    delete_folder_from_github(old_folder_name)
 
 # Admin page to upload files to GitHub
 def admin_page():
@@ -132,14 +202,41 @@ def admin_page():
         st.warning("No folders available. Please create a folder first.")
 
     # Step 3: List Files in a Selected Folder
-    st.subheader("View Files in a Selected Folder")
-    folder_list = get_folders_from_github()  # Get the list of folders created on GitHub
+    st.subheader("View and Manage Files in a Selected Folder")
+    folder_list = get_folders_from_github()
     if folder_list:
         selected_folder_for_viewing = st.selectbox("Select a folder to view files", folder_list)
         if selected_folder_for_viewing:
-            display_files_in_folder_on_github(selected_folder_for_viewing)
+            files_in_folder = get_files_from_github(selected_folder_for_viewing)
+            for file in files_in_folder:
+                st.write(file)
+                
+                # Rename file
+                new_file_name = st.text_input(f"Rename {file}", key=f"rename_{file}")
+                if new_file_name:
+                    if st.button(f"Rename {file}"):
+                        rename_file_on_github(selected_folder_for_viewing, file, new_file_name)
+
+                # Delete file
+                if st.button(f"Delete {file}"):
+                    delete_file_from_github(selected_folder_for_viewing, file)
     else:
         st.warning("No folders available to view files.")
+
+    # Step 4: Folder Management
+    st.subheader("Manage Folders")
+    folder_to_rename = st.selectbox("Select folder to rename", folder_list)
+    if folder_to_rename:
+        new_folder_name = st.text_input(f"New name for {folder_to_rename}", key="rename_folder")
+        if new_folder_name:
+            if st.button(f"Rename folder {folder_to_rename}"):
+                rename_folder_on_github(folder_to_rename, new_folder_name)
+
+    # Delete folder
+    folder_to_delete = st.selectbox("Select folder to delete", folder_list)
+    if folder_to_delete:
+        if st.button(f"Delete folder {folder_to_delete}"):
+            delete_folder_from_github(folder_to_delete)
 
 # Default page to display files from GitHub (as subjects)
 def default_page():
