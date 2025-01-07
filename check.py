@@ -36,13 +36,31 @@ def upload_to_github(file):
         st.error(f"Failed to upload file '{file.name}' to GitHub. Status code: {response.status_code}")
         st.write(response.json())
 
-# Function to handle file uploads and saving to GitHub
-def upload_files_to_github():
-    uploaded_files = st.file_uploader("Choose files", accept_multiple_files=True)
-    if uploaded_files:
-        for uploaded_file in uploaded_files:
-            # Upload the file to GitHub
-            upload_to_github(uploaded_file)
+# Function to upload a placeholder file to create the folder if it doesn't exist
+def upload_placeholder_to_create_folder():
+    # Upload a small placeholder file to create the folder (if it doesn't exist)
+    placeholder_file = "placeholder.txt"
+    placeholder_content = "This is a placeholder file to create the 'uploaded_files' folder."
+    
+    # Base64 encode the placeholder content
+    encoded_contents = base64.b64encode(placeholder_content.encode("utf-8")).decode("utf-8")
+
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{placeholder_file}"
+    data = {
+        "message": "Create 'uploaded_files' folder with placeholder file",
+        "content": encoded_contents,
+    }
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+    }
+
+    # Send the request to GitHub API to upload the placeholder file
+    response = requests.put(url, json=data, headers=headers)
+    if response.status_code == 201:
+        st.success("Successfully created the 'uploaded_files' folder with a placeholder file!")
+    else:
+        st.error(f"Failed to create folder with placeholder. Status code: {response.status_code}")
+        st.write(response.json())
 
 # Function to get the list of files stored on GitHub (in the uploaded_files folder)
 def get_files_from_github():
@@ -51,7 +69,6 @@ def get_files_from_github():
         "Authorization": f"token {GITHUB_TOKEN}",
     }
 
-    # Get the list of files in the 'uploaded_files' folder
     response = requests.get(url, headers=headers)
     
     if response.status_code == 200:
@@ -59,8 +76,13 @@ def get_files_from_github():
         if not files:
             return [], True  # No files in the folder
         return [file['name'] for file in files], False
+    elif response.status_code == 404:
+        # Folder does not exist, create the folder by uploading a placeholder file
+        upload_placeholder_to_create_folder()
+        return [], True
     else:
         st.error(f"Failed to fetch files from GitHub. Status code: {response.status_code}")
+        st.write(response.json())  # Log the full error message from GitHub
         return [], False
 
 # Function to display files stored on GitHub
