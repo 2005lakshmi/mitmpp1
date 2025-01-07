@@ -10,7 +10,15 @@ GITHUB_PATH = "uploaded_files"  # The folder where files will be stored on GitHu
 
 PASSWORD = st.secrets["general"]["password"]  # Password from secrets.toml
 
-# Function to upload files to GitHub
+# Function to upload multiple files to GitHub
+def upload_files_to_github():
+    uploaded_files = st.file_uploader("Choose files", accept_multiple_files=True)
+    if uploaded_files:
+        for uploaded_file in uploaded_files:
+            # Upload the file to GitHub
+            upload_to_github(uploaded_file)
+
+# Function to upload a file to GitHub
 def upload_to_github(file):
     # GitHub API endpoint to upload file
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{file.name}"
