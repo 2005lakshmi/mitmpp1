@@ -53,16 +53,23 @@ def get_files_from_github():
 
     # Get the list of files in the 'uploaded_files' folder
     response = requests.get(url, headers=headers)
+    
     if response.status_code == 200:
-        return [file['name'] for file in response.json()]
+        files = response.json()
+        if not files:
+            return [], True  # No files in the folder
+        return [file['name'] for file in files], False
     else:
         st.error(f"Failed to fetch files from GitHub. Status code: {response.status_code}")
-        return []
+        return [], False
 
 # Function to display files stored on GitHub
 def display_files_on_github():
-    files = get_files_from_github()
-    if files:
+    files, no_files = get_files_from_github()
+    
+    if no_files:
+        st.info("No files found in the 'uploaded_files' folder on GitHub.")
+    elif files:
         for file in files:
             st.write(file)  # Display the file name
             file_url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/{GITHUB_PATH}/{file}"
@@ -75,7 +82,7 @@ def display_files_on_github():
                 mime="application/octet-stream"
             )
     else:
-        st.error("No files in the uploaded_files folder on GitHub.")
+        st.error("Failed to fetch files from GitHub.")
 
 # Admin page to upload files to GitHub
 def admin_page():
@@ -94,32 +101,34 @@ def default_page():
     st.title(":red[Previous Papers] :blue[(2023-24)]")
 
     # Search or select folders to display files
-    folder_list = get_files_from_github()
+    files, no_files = get_files_from_github()
 
-    # Option 1: Search functionality (optional)
-    search_query = st.text_input("Search Subject Here...", type="password")
+    if no_files:
+        st.info("No previous papers available at the moment.")
     
-    if search_query:
-        filtered_files = [file for file in folder_list if search_query.lower() in file.lower()]
-        if filtered_files:
-            selected_file = st.radio("Search results", filtered_files)
-        else:
-            selected_file = None
     else:
-        selected_file = st.radio("***Select the Subject***", folder_list)
+        # Option 1: Search functionality (optional)
+        search_query = st.text_input("Search Subject Here...")
 
-    # If a file is selected, display the download button
-    if selected_file:
-        st.write(f"**Viewing file:** ***{selected_file}***")
-        file_url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/{GITHUB_PATH}/{selected_file}"
-        st.download_button(
-            label=f"Download {selected_file}",
-            data=requests.get(file_url).content,
-            file_name=selected_file,
-            mime="application/octet-stream"
-        )
-    else:
-        st.error("No previous papers available.")
+        if search_query:
+            filtered_files = [file for file in files if search_query.lower() in file.lower()]
+            if filtered_files:
+                selected_file = st.radio("Search results", filtered_files)
+            else:
+                selected_file = None
+        else:
+            selected_file = st.radio("***Select the Subject***", files)
+
+        # If a file is selected, display the download button
+        if selected_file:
+            st.write(f"**Viewing file:** ***{selected_file}***")
+            file_url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/{GITHUB_PATH}/{selected_file}"
+            st.download_button(
+                label=f"Download {selected_file}",
+                data=requests.get(file_url).content,
+                file_name=selected_file,
+                mime="application/octet-stream"
+            )
 
 # Main function for page navigation
 def main():
