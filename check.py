@@ -10,9 +10,8 @@ GITHUB_PATH = "uploaded_files"  # The folder where files will be stored on GitHu
 
 PASSWORD = st.secrets["general"]["password"]  # Password from secrets.toml
 
-# Function to create a folder on GitHub
+# Function to create a folder on GitHub by uploading a placeholder file
 def create_folder_on_github(folder_name):
-    # Upload a placeholder file to create the folder on GitHub
     placeholder_file = "placeholder.txt"
     placeholder_content = "This is a placeholder to create the folder on GitHub."
     
@@ -67,7 +66,11 @@ def get_files_from_github(folder_name):
     
     if response.status_code == 200:
         files = response.json()
-        return [file['name'] for file in files], False
+        if isinstance(files, list):  # Ensure the response is a list
+            return [file['name'] for file in files], False
+        else:
+            st.error(f"Unexpected response format: {files}")
+            return [], False
     elif response.status_code == 404:
         # Folder does not exist
         return [], True
