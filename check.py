@@ -12,6 +12,9 @@ PASSWORD = st.secrets["general"]["password"]  # Password from secrets.toml
 
 # Function to create a folder on GitHub (without .gitkeep)
 def create_folder_on_github(folder_name):
+    # Remove trailing slash if it exists
+    folder_name = folder_name.rstrip('/')
+
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{folder_name}/"
     
     # No placeholder content needed
@@ -27,8 +30,32 @@ def create_folder_on_github(folder_name):
     
     if response.status_code == 201:
         st.success(f"Folder '{folder_name}' created successfully on GitHub!")
+        create_null_txt(folder_name)  # Create the null.txt file inside the new folder
     else:
         st.error(f"Failed to create folder '{folder_name}'. Status code: {response.status_code}")
+        st.write(response.json())
+
+# Function to create a null.txt file in the created folder
+def create_null_txt(folder_name):
+    file_url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{folder_name}/null.txt"
+    
+    null_content = "null"
+    encoded_contents = base64.b64encode(null_content.encode()).decode("utf-8")
+
+    data = {
+        "message": "Add null.txt file with content 'null'",
+        "content": encoded_contents,
+    }
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+    }
+
+    response = requests.put(file_url, json=data, headers=headers)
+    
+    if response.status_code == 201:
+        st.success(f"File 'null.txt' added to folder '{folder_name}' successfully!")
+    else:
+        st.error(f"Failed to create 'null.txt' in folder '{folder_name}'. Status code: {response.status_code}")
         st.write(response.json())
 
 # Function to upload files to a specific folder on GitHub
@@ -219,7 +246,7 @@ def default_page():
         files = get_files_from_github(selected_folder)
         if files:
             st.subheader(f" ***{selected_folder}***")
-            st.write("***uploded files are...***")
+            st.write("***uploaded files are...***")
             for file in files:
                 st.write(file)
 
