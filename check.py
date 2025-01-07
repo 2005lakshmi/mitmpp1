@@ -88,53 +88,6 @@ def get_files_from_github(folder_name):
         st.error(f"Failed to fetch files from GitHub. Status code: {response.status_code}")
         return []
 
-# Function to delete a file from a specific folder on GitHub
-def delete_file_from_github(folder_name, file_name):
-    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{folder_name}/{file_name}"
-    headers = {
-        "Authorization": f"token {GITHUB_TOKEN}",
-    }
-
-    # Get the SHA of the file to delete
-    file_info = requests.get(url, headers=headers).json()
-    sha = file_info['sha']
-
-    data = {
-        "message": f"Delete {file_name}",
-        "sha": sha
-    }
-
-    response = requests.delete(url, json=data, headers=headers)
-    
-    if response.status_code == 200:
-        st.success(f"File '{file_name}' deleted successfully!")
-    else:
-        st.error(f"Failed to delete file '{file_name}'. Status code: {response.status_code}")
-        st.write(response.json())
-
-# Function to delete a folder by deleting its `.gitkeep` file
-def delete_folder_from_github(folder_name):
-    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{folder_name}/.gitkeep"
-    headers = {
-        "Authorization": f"token {GITHUB_TOKEN}",
-    }
-
-    file_info = requests.get(url, headers=headers).json()
-    sha = file_info['sha']
-
-    data = {
-        "message": f"Delete folder {folder_name}",
-        "sha": sha
-    }
-
-    response = requests.delete(url, json=data, headers=headers)
-    
-    if response.status_code == 200:
-        st.success(f"Folder '{folder_name}' deleted successfully!")
-    else:
-        st.error(f"Failed to delete folder '{folder_name}'. Status code: {response.status_code}")
-        st.write(response.json())
-
 # Admin page to upload files to GitHub
 def admin_page():
     st.title("Admin Page - Manage Files")
@@ -181,13 +134,20 @@ def default_page():
     # Display available subjects (folders)
     folder_list = get_folders_from_github()
     if folder_list:
-        selected_folders = st.multiselect("Select Subjects", folder_list)
-        if selected_folders:
-            for folder in selected_folders:
-                files = get_files_from_github(folder)
-                st.subheader(f"Files in folder '{folder}':")
-                for file in files:
-                    st.write(file)
+        # Single folder selection using selectbox
+        selected_folder = st.selectbox("Select a subject folder to view files", folder_list)
+        if selected_folder:
+            files = get_files_from_github(selected_folder)
+            st.subheader(f"Files in folder '{selected_folder}':")
+            for file in files:
+                st.write(file)
+                file_url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/{GITHUB_PATH}/{selected_folder}/{file}"
+                st.download_button(
+                    label=f"Download {file}",
+                    data=requests.get(file_url).content,
+                    file_name=file,
+                    mime="application/octet-stream"
+                )
         else:
             st.info("Please select a subject to view its files.")
     else:
