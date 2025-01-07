@@ -12,7 +12,7 @@ PASSWORD = st.secrets["general"]["password"]  # Password from secrets.toml
 
 # Function to create a folder on GitHub (without .gitkeep)
 def create_folder_on_github(folder_name):
-    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{folder_name}"
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{folder_name}/"
     
     # No placeholder content needed
     data = {
@@ -183,19 +183,20 @@ def default_page():
     st.title(":blue[Previous] Papers :green[(2023-24)]")
 
     # Search functionality for admin to enter a subject or search
-    search_query = st.text_input("Search Subject Here...", type="password")
+    search_query = st.text_input("Search Subject Here...")
 
-    # Check if the entered query matches the password
-    if search_query == PASSWORD:
-        st.session_state.page = "Admin Page"
-        st.success("Password correct! Redirecting to Admin Page...")
-        st.rerun()
-
-    # Display available subjects (folders)
+    # Fetch the folder list from GitHub
     folder_list = get_folders_from_github()
-    if folder_list:
+
+    # Filter folder list based on the search query
+    if search_query:
+        filtered_folders = [folder for folder in folder_list if search_query.lower() in folder.lower()]
+    else:
+        filtered_folders = folder_list
+
+    if filtered_folders:
         # Radio button for folder selection (only one folder at a time)
-        selected_folder = st.radio("**Select Subject to View Files**", folder_list)
+        selected_folder = st.radio("**Select Subject to View Files**", filtered_folders)
         files = get_files_from_github(selected_folder)
         if files:
             st.subheader(f" ***{selected_folder}***")
@@ -223,7 +224,7 @@ def default_page():
                     mime=mime_type
                 )
     else:
-        st.info("No subjects available at the moment.")
+        st.info("No subjects available matching the search query.")
 
 # Main function for page navigation
 def main():
