@@ -20,7 +20,7 @@ def create_folder_on_github(folder_name):
     # No placeholder content needed
     data = {
         "message": f"Create folder {folder_name}",
-        "content": "",  # Leave content empty as we're not uploading any file
+          # Leave content empty as we're not uploading any file
     }
     headers = {
         "Authorization": f"token {GITHUB_TOKEN}",
