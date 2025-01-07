@@ -116,10 +116,10 @@ def delete_file_or_folder_from_github(file_or_folder_path):
 
 # Admin page to upload files, rename, and delete files or folders
 def admin_page():
-    st.title("Admin Page - Manage Files and Folders")
+    st.title(":blue[Upload] :green[Files]")
 
     # Step 1: Folder Creation
-    st.subheader("Create a Folder")
+    st.subheader("Create Folder(***subject***)")
     folder_name = st.text_input("Enter folder name to create")
     if st.button("Create Folder"):
         if folder_name:
@@ -129,14 +129,14 @@ def admin_page():
 
     # Step 2: Upload Files
     st.subheader("Upload Files to a Folder")
-    folder_name_to_upload = st.selectbox("Select folder to upload files", get_folders_from_github())
+    folder_name_to_upload = st.selectbox("**Select folder** ***to upload files***", get_folders_from_github())
     if folder_name_to_upload:
         upload_files_to_github(folder_name_to_upload)
 
     # Step 3: View Files in Selected Folder
-    st.subheader("View and Manage Files in a Folder")
+    st.subheader(":blue[View and Manage Files]")
     folder_list = get_folders_from_github()
-    selected_folder_for_viewing = st.selectbox("Select a folder to view files", folder_list)
+    selected_folder_for_viewing = st.selectbox("Select folder(***subject***)", folder_list)
     
     if selected_folder_for_viewing:
         files = get_files_from_github(selected_folder_for_viewing)
