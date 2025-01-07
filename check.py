@@ -135,65 +135,6 @@ def delete_folder_from_github(folder_name):
         st.error(f"Failed to delete folder '{folder_name}'. Status code: {response.status_code}")
         st.write(response.json())
 
-# Function to rename a file on GitHub
-def rename_file_on_github(folder_name, old_file_name, new_file_name):
-    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{folder_name}/{old_file_name}"
-    headers = {
-        "Authorization": f"token {GITHUB_TOKEN}",
-    }
-
-    # Get the SHA of the file to rename
-    file_info = requests.get(url, headers=headers).json()
-    sha = file_info['sha']
-
-    # Upload the file with a new name
-    new_file_url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{folder_name}/{new_file_name}"
-    encoded_contents = base64.b64encode(file_info['content'].encode("utf-8")).decode("utf-8")
-
-    data = {
-        "message": f"Rename {old_file_name} to {new_file_name}",
-        "content": encoded_contents,
-        "sha": sha
-    }
-
-    response = requests.put(new_file_url, json=data, headers=headers)
-    
-    if response.status_code == 201:
-        # Now delete the old file
-        delete_file_from_github(folder_name, old_file_name)
-        st.success(f"File '{old_file_name}' renamed to '{new_file_name}'!")
-    else:
-        st.error(f"Failed to rename file. Status code: {response.status_code}")
-        st.write(response.json())
-
-# Function to rename a folder on GitHub (by moving files)
-def rename_folder_on_github(old_folder_name, new_folder_name):
-    files = get_files_from_github(old_folder_name)
-    for file in files:
-        # Move files to the new folder
-        old_file_path = f"{old_folder_name}/{file}"
-        new_file_path = f"{new_folder_name}/{file}"
-        rename_file_on_github(old_folder_name, file, new_file_path)
-
-    # After renaming files, delete the old folder
-    delete_folder_from_github(old_folder_name)
-
-# Function to display files from a specific folder
-def display_files_in_folder_on_github(folder_name):
-    files = get_files_from_github(folder_name)
-    if files:
-        st.subheader(f"Files in folder '{folder_name}':")
-        for file in files:
-            st.write(file)
-            # You can add additional functionality to delete or rename files here as needed
-            if st.button(f"Delete {file}", key=f"delete_{file}"):
-                delete_file_from_github(folder_name, file)
-            new_file_name = st.text_input(f"Rename {file}", key=f"rename_{file}")
-            if new_file_name and st.button(f"Rename {file}"):
-                rename_file_on_github(folder_name, file, new_file_name)
-    else:
-        st.info(f"No files found in folder '{folder_name}'.")
-
 # Admin page to upload files to GitHub
 def admin_page():
     st.title("Admin Page - Manage Files")
@@ -218,7 +159,11 @@ def admin_page():
     folder_list = get_folders_from_github()
     selected_folder_for_viewing = st.selectbox("Select a folder to view files", folder_list)
     if selected_folder_for_viewing:
-        display_files_in_folder_on_github(selected_folder_for_viewing)
+        files = get_files_from_github(selected_folder_for_viewing)
+        st.subheader(f"Files in folder '{selected_folder_for_viewing}':")
+        for file in files:
+            st.write(file)
+            # You can add additional functionality to delete or rename files here as needed
 
 # Default page to display files from GitHub (as subjects)
 def default_page():
@@ -239,7 +184,10 @@ def default_page():
         selected_folders = st.multiselect("Select Subjects", folder_list)
         if selected_folders:
             for folder in selected_folders:
-                display_files_in_folder_on_github(folder)
+                files = get_files_from_github(folder)
+                st.subheader(f"Files in folder '{folder}':")
+                for file in files:
+                    st.write(file)
         else:
             st.info("Please select a subject to view its files.")
     else:
