@@ -20,7 +20,7 @@ def create_folder_on_github(folder_name):
     # No placeholder content needed
     data = {
         "message": f"Create folder {folder_name}",
-          # Leave content empty as we're not uploading any file
+        "content" : ""# Leave content empty as we're not uploading any file
     }
     headers = {
         "Authorization": f"token {GITHUB_TOKEN}",
@@ -37,7 +37,7 @@ def create_folder_on_github(folder_name):
 
 # Function to create a null.txt file in the created folder
 def create_null_txt(folder_name):
-    file_url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{folder_name}/null.txt"
+    file_url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/.{folder_name}/null.txt"
     
     null_content = "null"
     encoded_contents = base64.b64encode(null_content.encode()).decode("utf-8")
