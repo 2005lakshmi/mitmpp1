@@ -12,8 +12,8 @@ PASSWORD = st.secrets["general"]["password"]  # Password from secrets.toml
 
 # Function to create a folder on GitHub (without .gitkeep)
 def create_folder_on_github(folder_name):
-    # Remove trailing slash if it exists
-    folder_name = folder_name.rstrip('/')
+    # Strip any trailing slashes from the folder name
+    folder_name = folder_name.strip('/')
 
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{folder_name}/"
     
@@ -213,7 +213,7 @@ def admin_page():
                     st.rerun()
                 else:
                     st.error(f"Failed to rename file '{file}'.")
-
+            
             # Delete file option
             if st.button(f"Delete {file}"):
                 delete_file_or_folder_from_github(f"{GITHUB_PATH}/{selected_folder_for_viewing}/{file}")
