@@ -198,7 +198,8 @@ def default_page():
         selected_folder = st.radio("**Select Subject to View Files**", folder_list)
         files = get_files_from_github(selected_folder)
         if files:
-            st.subheader(f" ***{selected_folder}*** ' uploded files are: ")
+            st.subheader(f" ***{selected_folder}***")
+            st.write("***uploded files are...***")
             for file in files:
                 st.write(file)
 
