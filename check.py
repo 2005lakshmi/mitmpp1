@@ -140,7 +140,7 @@ def admin_page():
     
     if selected_folder_for_viewing:
         files = get_files_from_github(selected_folder_for_viewing)
-        st.subheader(f"Files in folder '{selected_folder_for_viewing}':")
+        st.subheader(f":green[Files in folder : {selected_folder_for_viewing}]:")
         for file in files:
             st.write(file)
             
@@ -172,7 +172,7 @@ def admin_page():
                 delete_file_or_folder_from_github(f"{GITHUB_PATH}/{selected_folder_for_viewing}/{file}")
 
     # Step 4: Delete Folder (Warning: This will delete all files in the folder)
-    st.subheader("Delete Folder")
+    st.subheader(":red[***Delete Folder***]")
     folder_to_delete = st.selectbox("Select a folder to delete", get_folders_from_github())
     if folder_to_delete:
         if st.button(f"Delete Folder '{folder_to_delete}'"):
