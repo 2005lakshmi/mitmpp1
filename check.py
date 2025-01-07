@@ -89,6 +89,7 @@ def get_files_from_github():
 def display_files_on_github():
     files, no_files = get_files_from_github()
     
+    # Display the file names or appropriate messages
     if no_files:
         st.info("No files found in the 'uploaded_files' folder on GitHub.")
     elif files:
@@ -122,16 +123,18 @@ def admin_page():
 def default_page():
     st.title(":red[Previous Papers] :blue[(2023-24)]")
 
-    # Search or select folders to display files
+    # Always show the search input box for admin to enter a subject or search
+    search_query = st.text_input("Search Subject Here...",type = "password")
+
+    # Get the list of files
     files, no_files = get_files_from_github()
 
+    # Show files based on search query
     if no_files:
         st.info("No previous papers available at the moment.")
     
     else:
-        # Option 1: Search functionality (optional)
-        search_query = st.text_input("Search Subject Here...")
-
+        # Filter the files if search query exists
         if search_query:
             filtered_files = [file for file in files if search_query.lower() in file.lower()]
             if filtered_files:
