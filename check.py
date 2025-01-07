@@ -113,7 +113,7 @@ def admin_page():
 
     # Step 1: File Upload
     st.subheader("Upload files to GitHub")
-    upload_files_to_github()
+    upload_files_to_github()  # Ensure the function is defined
 
     # Step 2: List Files in the uploaded_files folder
     st.subheader("View files stored in GitHub")
