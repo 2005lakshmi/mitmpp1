@@ -255,9 +255,7 @@ def default_page():
                     mime=mime_type
                 )
                 st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
-    else:
-        st.info("No subjects available at the moment.")
-        
+
     st.markdown("""
     <style>
     .footer {
@@ -277,6 +275,10 @@ def default_page():
     </div>
     """, unsafe_allow_html=True)
 
+
+
+    else:
+        st.info("No subjects available at the moment.")
 
 
 # Main function for page navigation
