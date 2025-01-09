@@ -271,7 +271,5 @@ def main():
     else:
         default_page()
         
-        st.error("Contact us on WhatsApp:[WhatsApp](http://wa.me/919964924820)")
-
 if __name__ == "__main__":
     main()
