@@ -196,7 +196,7 @@ def admin_page():
             # Delete file option
             if st.button(f"Delete {file}"):
                 delete_file_or_folder_from_github(f"{GITHUB_PATH}/{selected_folder_for_viewing}/{file}")
-
+            st.success(".....")
     # Step 4: Delete Folder (Warning: This will delete all files in the folder)
     st.subheader(":red[***Delete Folder***]")
     folder_to_delete = st.selectbox("Select a folder to delete", get_folders_from_github())
