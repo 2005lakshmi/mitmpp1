@@ -224,7 +224,7 @@ def default_page():
         st.subheader("Select Subject to View Files")
         selected_folder = st.radio("**Select Subject to View Files**", folder_list)
 
-        st.markdown("<hr style = 'border : 1px solid gray;'>". unsafe_allow_html = True)
+        st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
         
         files = get_files_from_github(selected_folder)
         if files:
