@@ -214,7 +214,7 @@ def default_page():
     st.markdown("""
     <h1>
         <span style="color: blue;">Previous</span> Papers 
-        <span style="font-size: 18px;">   1st year Eng...</span> 
+        <span style="font-size: 18px;">   1stYear Eng...</span> 
         <span style="color: green;">(2023-24)</span>
     </h1>
     """, unsafe_allow_html=True)
