@@ -255,7 +255,12 @@ def default_page():
                     mime=mime_type
                 )
                 st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
-       
+
+        st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
+        st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
+        st.write("Contact us on WhatsApp:[WhatsApp](http://wa.me/919964924820)")
+
+    
     else:
         st.info("No subjects available at the moment.")
     st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
