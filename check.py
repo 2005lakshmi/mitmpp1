@@ -3,7 +3,8 @@ import base64
 import requests
 import streamlit as st
 
-st.legacy_caching.clear_cache()
+st.cache_data.clear()
+
 
 
 # GitHub token and repository details from secrets.toml
