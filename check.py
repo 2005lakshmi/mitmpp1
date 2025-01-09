@@ -10,40 +10,19 @@ GITHUB_PATH = "uploaded_files"  # The folder where files will be stored on GitHu
 
 PASSWORD = st.secrets["general"]["password"]  # Password from secrets.toml
 
-# Function to create a folder on GitHub (without .gitkeep)
+# Function to create a folder on GitHub by uploading a null.txt file (workaround)
 def create_folder_on_github(folder_name):
-    # Strip any trailing slashes from the folder name
+    # Remove any trailing slashes from the folder name
     folder_name = folder_name.strip('/')
 
-    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{folder_name}/"
-    
-    # No placeholder content needed
-    data = {
-        "message": f"Create folder {folder_name}",
-        "content" : "" # Leave content empty as we're not uploading any file
-    }
-    headers = {
-        "Authorization": f"token {GITHUB_TOKEN}",
-    }
-
-    response = requests.put(url, json=data, headers=headers)
-    
-    if response.status_code == 201:
-        st.success(f"Folder '{folder_name}' created successfully on GitHub!")
-        create_null_txt(folder_name)  # Create the null.txt file inside the new folder
-    else:
-        st.error(f"Failed to create folder '{folder_name}'. Status code: {response.status_code}")
-        st.write(response.json())
-
-# Function to create a null.txt file in the created folder
-def create_null_txt(folder_name):
-    file_url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/.{folder_name}/null.txt"
+    # URL to create a file inside the folder, if the folder doesn't exist, GitHub will create it
+    file_url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{folder_name}/null.txt"
     
     null_content = "null"
     encoded_contents = base64.b64encode(null_content.encode()).decode("utf-8")
 
     data = {
-        "message": "Add null.txt file with content 'null'",
+        "message": f"Create folder {folder_name} with a null.txt file",
         "content": encoded_contents,
     }
     headers = {
@@ -53,9 +32,9 @@ def create_null_txt(folder_name):
     response = requests.put(file_url, json=data, headers=headers)
     
     if response.status_code == 201:
-        st.success(f"File 'null.txt' added to folder '{folder_name}' successfully!")
+        st.success(f"Folder '{folder_name}' created successfully on GitHub!")
     else:
-        st.error(f"Failed to create 'null.txt' in folder '{folder_name}'. Status code: {response.status_code}")
+        st.error(f"Failed to create folder '{folder_name}'. Status code: {response.status_code}")
         st.write(response.json())
 
 # Function to upload files to a specific folder on GitHub
@@ -113,53 +92,6 @@ def get_files_from_github(folder_name):
     else:
         st.error(f"Failed to fetch files from GitHub. Status code: {response.status_code}")
         return []
-
-# Function to delete a file or folder from GitHub
-def delete_file_or_folder_from_github(file_or_folder_path):
-    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{file_or_folder_path}"
-    headers = {
-        "Authorization": f"token {GITHUB_TOKEN}",
-    }
-
-    # Fetch the file or folder info
-    response = requests.get(url, headers=headers)
-
-    if response.status_code == 200:
-        file_info = response.json()
-        
-        # If response is a list (folder containing files)
-        if isinstance(file_info, list):
-            # This is a folder, and we need to delete its contents first
-            for file in file_info:
-                if file['type'] == 'file':  # Only delete files, not directories
-                    file_path = file['path']
-                    delete_file_or_folder_from_github(file_path)
-            # Now delete the folder itself (this will also remove its contents)
-            st.success(f"Folder '{file_or_folder_path}' is empty now.")
-            return
-        
-        # Now handle if the response is a dictionary for a single file
-        if isinstance(file_info, dict) and 'sha' in file_info:
-            sha = file_info['sha']
-            data = {
-                "message": f"Delete {file_or_folder_path}",
-                "sha": sha
-            }
-            response = requests.delete(url, headers=headers, json=data)
-            if response.status_code == 200:
-                st.success(f"Successfully deleted '{file_or_folder_path}'")
-                import time
-                time.sleep(2)
-                st.rerun()
-            else:
-                st.error(f"Failed to delete '{file_or_folder_path}'. Status code: {response.status_code}")
-                st.write(response.json())
-        else:
-            st.error(f"File/Folder not found: {file_or_folder_path}")
-            st.write(file_info)
-    else:
-        st.error(f"Failed to fetch file/folder info. Status code: {response.status_code}")
-        st.write(response.json())
 
 # Admin page to upload files, rename, and delete files or folders
 def admin_page():
