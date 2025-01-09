@@ -213,7 +213,7 @@ def default_page():
     st.markdown("""
     <h1>
         <span style="color: blue;">Previous</span> Papers 
-        <span style="font-size: 18px;">1, 2 sem (Engineering)</span> 
+        <span style="font-size: 18px;">( 1st year Engineering)</span> 
         <span style="color: green;">(2023-24)</span>
     </h1>
     """, unsafe_allow_html=True)
