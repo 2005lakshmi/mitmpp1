@@ -257,6 +257,27 @@ def default_page():
                 st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
     else:
         st.info("No subjects available at the moment.")
+        
+    st.markdown("""
+    <style>
+    .footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background-color: #f5f5f5;
+        text-align: center;
+        padding: 10px;
+        font-size: 14px;
+        border-top: 1px solid #ddd;
+    }
+    </style>
+    <div class="footer">
+        <p>Contact us at: <a href="mailto:support@example.com">support@example.com</a> | Call: +123456789</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+
 
 # Main function for page navigation
 def main():
