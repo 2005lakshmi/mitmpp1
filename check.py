@@ -206,7 +206,7 @@ def admin_page():
             
 # Default page to display files from GitHub (as subjects)
 def default_page():
-    st.title(":blue[Previous] Papers of ***1,2 sem (Engineering)*** :green[(2023-24)]")
+    st.title(":blue[Previous] Papers of 1,2 sem (Engineering) :green[(2023-24)]")
 
     # Search functionality for admin to enter a subject or search
     search_query = st.text_input("Search Subject Here...", type="password")
