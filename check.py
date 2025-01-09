@@ -3,6 +3,9 @@ import base64
 import requests
 import streamlit as st
 
+st.legacy_caching.clear_cache()
+
+
 # GitHub token and repository details from secrets.toml
 GITHUB_TOKEN = st.secrets["github"]["token"]
 GITHUB_REPO = "2005lakshmi/mitmpp1"  # Replace with your GitHub repository name
@@ -209,7 +212,7 @@ def default_page():
     #st.title(":blue[Previous] Papers of 1,2 sem (Engineering) :green[(2023-29)]")
     st.markdown("""
     <h1>
-        <span style="color: blue;">Previous</span> Papers of 
+        <span style="color: blue;">Previous</span> Papers 
         <span style="font-size: 18px;">1, 2 sem (Engineering)</span> 
         <span style="color: green;">(2023-24)</span>
     </h1>
