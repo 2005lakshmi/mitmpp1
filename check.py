@@ -180,63 +180,6 @@ def admin_page():
     if folder_name_to_upload:
         upload_files_to_github(folder_name_to_upload)
 
-    # Step 3: View Files in Selected Folder
-    st.subheader(":blue[View and Manage Files]")
-    folder_list = get_folders_from_github()
-    selected_folder_for_viewing = st.selectbox("Select folder(***subject***)", folder_list)
-    
-    if selected_folder_for_viewing:
-        files = get_files_from_github(selected_folder_for_viewing)
-        st.subheader(f":green[Files in folder : {selected_folder_for_viewing}]:")
-        for file in files:
-            st.write(file)
-            
-            # Rename file option
-            new_name = st.text_input(f"Rename {file}", "")
-            if new_name and st.button(f"Rename {file}"):
-
-                # Ensure new name is different from the original
-                if new_name != file:
-                    new_file_url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{selected_folder_for_viewing}/{new_name}"
-                    file_url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{selected_folder_for_viewing}/{file}"
-                    
-                    # Fetch the file's current content
-                    file_content_response = requests.get(file_url, headers=headers)
-                    if file_content_response.status_code == 200:
-                        file_content = file_content_response.json()
-                        encoded_contents = file_content['content']  # Get the base64 content
-                        
-                        data = {
-                            "message": f"Rename {file} to {new_name}",
-                            "content": encoded_contents,
-                            "sha": file_content['sha']  # Ensure we get the SHA for the file to perform a proper update
-                        }
-                        
-                        response = requests.put(new_file_url, json=data, headers=headers)
-                        if response.status_code == 201:
-                            delete_file_or_folder_from_github(f"{GITHUB_PATH}/{selected_folder_for_viewing}/{file}")
-                            st.success(f"File '{file}' renamed to '{new_name}'")
-                            import time
-                            time.sleep(2)
-                            st.rerun()
-                        else:
-                            st.error(f"Failed to rename file '{file}'.")
-                            st.write(response.json())
-                    else:
-                        st.error(f"Failed to fetch content for renaming file '{file}'.")
-                        st.write(file_content_response.json())
-            
-            # Delete file option
-            if st.button(f"Delete {file}"):
-                delete_file_or_folder_from_github(f"{GITHUB_PATH}/{selected_folder_for_viewing}/{file}")
-
-    # Step 4: Delete Folder (Warning: This will delete all files in the folder)
-    st.subheader(":red[***Delete Folder***]")
-    folder_to_delete = st.selectbox("Select a folder to delete", get_folders_from_github())
-    if folder_to_delete:
-        if st.button(f"Delete Folder '{folder_to_delete}'"):
-            delete_file_or_folder_from_github(f"{GITHUB_PATH}/{folder_to_delete}")
-
 # Default page to display files from GitHub (as subjects)
 def default_page():
     st.title(":blue[Previous] Papers :green[(2023-24)]")
