@@ -229,7 +229,8 @@ def default_page():
         
         files = get_files_from_github(selected_folder)
         if files:
-            st.subheader(f" ***{selected_folder}***")
+            st.subheader(f"***Subject : {selected_folder}***")
+            st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
             st.write("***uploaded files are...***")
             for file in files:
                 st.write(file)
