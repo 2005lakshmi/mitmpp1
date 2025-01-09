@@ -284,7 +284,7 @@ def main():
         default_page()
         st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
         st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
-        st.write("Contact us on WhatsApp:[WhatsApp](http://wa.me/919964924820)")
+        st.write("Contact: [Email Us](mailto:mitmfirstyearpaper@gmail.com)")
 
 if __name__ == "__main__":
     main()
