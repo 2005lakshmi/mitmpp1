@@ -230,8 +230,8 @@ def default_page():
         files = get_files_from_github(selected_folder)
         if files:
             st.subheader(f"***Subject : {selected_folder}***")
-            st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
             st.write("***uploaded files are...***")
+            st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
             for file in files:
                 st.write(file)
 
@@ -254,6 +254,7 @@ def default_page():
                     file_name=file,
                     mime=mime_type
                 )
+                st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
     else:
         st.info("No subjects available at the moment.")
 
