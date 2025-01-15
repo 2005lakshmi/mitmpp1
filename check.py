@@ -286,5 +286,5 @@ def main():
         st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
         st.write("Contact: [Email Us](mailto:mitmfirstyearpaper@gmail.com)")
 
-if _name_ == "_main_":
+if __name__ == "_main_":
     main()
