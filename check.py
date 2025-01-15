@@ -235,7 +235,7 @@ def default_page():
     if folder_list:
         # Radio button for folder selection (only one folder at a time)
         st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
-        st.subheader(":green[**Select Subject**] to View Files")
+        st.subheader(":green[**Select Subject**] ***to View Files***")
         selected_folder = st.radio("*Select Subject to View Files*", folder_list)
 
         st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
