@@ -5,16 +5,29 @@ import streamlit as st
 
 st.cache_data.clear()
 
+# Set background color to #F4EDD3 (light beige color)
 st.markdown(
     """
     <style>
+        /* Set background color for the entire page */
         body {
-            background-color: #F4EDD3;  /* Set background color to #F4EDD3 */
+            background-color: #F4EDD3 !important;
+        }
+        
+        /* Ensure the header area has the same background color */
+        .css-18e3th9 {
+            background-color: #F4EDD3 !important;
+        }
+
+        /* Apply background color to other areas of Streamlit layout */
+        .css-ffhzg2 {
+            background-color: #F4EDD3 !important;
         }
     </style>
     """,
     unsafe_allow_html=True
 )
+
 
 
 # GitHub token and repository details from secrets.toml
