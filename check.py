@@ -235,7 +235,70 @@ def default_page():
     if folder_list:
         # Radio button for folder selection (only one folder at a time)
         st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
-        st.subheader(":green[**Select Subject**] ***to View Files***")
+
+        st.markdown(
+    """
+    <style>
+        /* Set background color for the entire page */
+        body {
+            background-color: #F4EDD3 !important;
+        }
+        
+        /* Styling for floating text "Select Subject" */
+        .floating-text-select {
+            color: #4C585B; /* Color for "Select Subject" */
+            font-size: 24px;
+            position: relative;
+            top: 10px;
+            left: 20px;
+            animation: float-select 3s infinite ease-in-out;
+        }
+        
+        /* Styling for floating text "to View Files" */
+        .floating-text-view {
+            color: #A5BFCC; /* Color for "to View Files" */
+            font-size: 20px;
+            position: absolute;
+            top: 60px;
+            left: 20px;
+            animation: float-view 3s infinite ease-in-out;
+        }
+
+        /* Keyframes for floating effect */
+        @keyframes float-select {
+            0% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+            100% {
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes float-view {
+            0% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(10px);
+            }
+            100% {
+                transform: translateY(0);
+            }
+        }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+        # Replace the subheader with floating text
+        st.markdown('<p class="floating-text-select">Select Subject</p>', unsafe_allow_html=True)
+        st.markdown('<p class="floating-text-view">to View Files</p>', unsafe_allow_html=True)
+
+        
+        #st.subheader(":green[**Select Subject**] ***to View Files***")
         selected_folder = st.radio("*Select Subject to View Files*", folder_list)
 
         st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
