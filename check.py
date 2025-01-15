@@ -211,31 +211,6 @@ def admin_page():
 # Default page to display files from GitHub (as subjects)
 def default_page():
 
-    # Set background color to #F4EDD3 (light beige color)
-    st.markdown(
-    """
-    <style>
-        /* Set background color for the entire page */
-        body {
-            background-color: #F4EDD3 !important;
-        }
-        
-        /* Ensure the header area has the same background color */
-        .css-18e3th9 {
-            background-color: #F4EDD3 !important;
-        }
-
-        /* Apply background color to other areas of Streamlit layout */
-        .css-ffhzg2 {
-            background-color: #F4EDD3 !important;
-        }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
-
-    
     #st.title(":blue[Previous] Papers of 1,2 sem (Engineering) :green[(2023-29)]")
     st.markdown("""
     <h1>
