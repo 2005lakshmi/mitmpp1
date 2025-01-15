@@ -9,12 +9,13 @@ st.markdown(
     """
     <style>
         body {
-            background-color: #F4EDD3;  # Set background color to #F4EDD3
+            background-color: #F4EDD3;  /* Set background color to #F4EDD3 */
         }
     </style>
     """,
     unsafe_allow_html=True
 )
+
 
 # GitHub token and repository details from secrets.toml
 GITHUB_TOKEN = st.secrets["github"]["token"]
