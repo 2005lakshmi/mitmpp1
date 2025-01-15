@@ -212,7 +212,7 @@ def admin_page():
 def default_page():
 
     # Set background color to #F4EDD3 (light beige color)
-st.markdown(
+    st.markdown(
     """
     <style>
         /* Set background color for the entire page */
