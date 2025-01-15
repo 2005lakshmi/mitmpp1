@@ -242,7 +242,7 @@ def default_page():
         
         files = get_files_from_github(selected_folder)
         if files:
-            st.subheader(f"Subject : *{:red[selected_folder]}*")
+            st.subheader(f"Subject : :red[*{selected_folder}*]")
             st.write("PYQ or Resources :smile:")
             st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
             for file in files:
