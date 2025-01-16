@@ -2,7 +2,7 @@ import os
 import base64
 import requests
 import streamlit as st
-import json  # Importing the json module
+import json
 
 st.cache_data.clear()
 
@@ -15,8 +15,12 @@ PASSWORD = st.secrets["general"]["password"]  # Password from secrets.toml
 
 # Function to create a folder on GitHub by uploading a null.txt file (workaround)
 def create_folder_on_github(folder_name):
+    # Remove any trailing slashes from the folder name
     folder_name = folder_name.strip('/')
+
+    # URL to create a file inside the folder, if the folder doesn't exist, GitHub will create it
     file_url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{folder_name}/null.txt"
+    
     null_content = "null"
     encoded_contents = base64.b64encode(null_content.encode()).decode("utf-8")
 
@@ -29,6 +33,7 @@ def create_folder_on_github(folder_name):
     }
 
     response = requests.put(file_url, json=data, headers=headers)
+    
     if response.status_code == 201:
         st.success(f"Folder '{folder_name}' created successfully on GitHub!")
     else:
@@ -69,6 +74,7 @@ def get_folders_from_github():
     response = requests.get(url, headers=headers)
     if response.status_code == 200:
         files = response.json()
+        # Filter only folders (type == "dir")
         folders = [file['name'] for file in files if file['type'] == "dir"]
         return folders
     else:
@@ -85,49 +91,51 @@ def get_files_from_github(folder_name):
 
     response = requests.get(url, headers=headers)
     if response.status_code == 200:
-        return [file['name'] for file in response.json()]
+        return [file['name'] for file in response.json() if not file['name'].endswith('json')]  # Exclude JSON files
     else:
         st.error(f"Failed to fetch files from GitHub. Status code: {response.status_code}")
         return []
 
-# Function to delete a file or folder from GitHub
-def delete_file_or_folder_from_github(file_or_folder_path):
-    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{file_or_folder_path}"
+# Function to handle descriptions for files in a folder
+def handle_descriptions_for_files(folder_name, file, description_data):
+    descriptions_file_path = f"{folder_name}/descriptions.json"
+    descriptions = {}
+
+    # Get the current descriptions
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{descriptions_file_path}"
     headers = {
         "Authorization": f"token {GITHUB_TOKEN}",
     }
-
     response = requests.get(url, headers=headers)
+
+    # If descriptions.json exists, update it
     if response.status_code == 200:
-        file_info = response.json()
-
-        # If response is a list (folder containing files)
-        if isinstance(file_info, list):
-            for file in file_info:
-                if file['type'] == 'file':
-                    file_path = file['path']
-                    delete_file_or_folder_from_github(file_path)
-            st.success(f"Folder '{file_or_folder_path}' is empty now.")
-            return
-
-        # Handle if the response is a dictionary for a single file
-        if isinstance(file_info, dict) and 'sha' in file_info:
-            sha = file_info['sha']
-            data = {
-                "message": f"Delete {file_or_folder_path}",
-                "sha": sha
-            }
-            response = requests.delete(url, headers=headers, json=data)
-            if response.status_code == 200:
-                st.success(f"Successfully deleted '{file_or_folder_path}'")
-            else:
-                st.error(f"Failed to delete '{file_or_folder_path}'. Status code: {response.status_code}")
-                st.write(response.json())
+        descriptions_content = response.json().get("content", "")
+        if descriptions_content:
+            descriptions = base64.b64decode(descriptions_content).decode("utf-8")
+            descriptions = json.loads(descriptions)  # Parse JSON content
         else:
-            st.error(f"File/Folder not found: {file_or_folder_path}")
-            st.write(file_info)
+            descriptions = {}  # Handle the case where the file is empty
     else:
-        st.error(f"Failed to fetch file/folder info. Status code: {response.status_code}")
+        descriptions = {}  # If descriptions.json doesn't exist, initialize it
+
+    # Add or update the description for the specific file
+    descriptions[file] = description_data
+
+    # Encode the updated descriptions into base64
+    encoded_descriptions = base64.b64encode(json.dumps(descriptions).encode()).decode("utf-8")
+
+    # Push the updated descriptions to GitHub
+    data = {
+        "message": f"Update descriptions for {folder_name}",
+        "content": encoded_descriptions,
+    }
+    response = requests.put(url, json=data, headers=headers)
+
+    if response.status_code == 201:
+        st.success(f"Description for '{file}' added successfully!")
+    else:
+        st.error(f"Failed to add description for '{file}'.")
         st.write(response.json())
 
 # Admin page to upload files, rename, and delete files or folders
@@ -135,7 +143,8 @@ def admin_page():
     st.title(":blue[Upload] :green[Files]")
 
     # Step 1: Folder Creation
-    st.subheader("Create Folder(**subject**)") 
+    st.subheader("Create Folder(**subject**)")
+
     folder_name = st.text_input("Enter folder name to create")
     if st.button("Create Folder"):
         if folder_name:
@@ -151,73 +160,48 @@ def admin_page():
 
     # Step 3: View Files in Selected Folder
     st.subheader(":blue[View and Manage Files]")
+
     folder_list = get_folders_from_github()
     selected_folder_for_viewing = st.selectbox("Select folder(**subject**)", folder_list)
     
     if selected_folder_for_viewing:
         files = get_files_from_github(selected_folder_for_viewing)
         st.subheader(f":green[Files in folder : {selected_folder_for_viewing}]:")
-        
         for file in files:
-            if file != "descriptions.json":  # Don't display the descriptions.json file
-                st.write(file)
+            st.write(file)
             
-                # Rename file option
-                new_name = st.text_input(f"Rename {file}", "")
-                if new_name and st.button(f"Rename {file}"):
-                    new_file_url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{selected_folder_for_viewing}/{new_name}"
-                    file_url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{selected_folder_for_viewing}/{file}"
-                    encoded_contents = base64.b64encode(requests.get(file_url).content).decode("utf-8")
-                    data = {
-                        "message": f"Rename {file} to {new_name}",
-                        "content": encoded_contents,
-                    }
-                    headers = {
-                        "Authorization": f"token {GITHUB_TOKEN}",
-                    }
-                    response = requests.put(new_file_url, json=data, headers=headers)
-                    if response.status_code == 201:
-                        delete_file_or_folder_from_github(f"{GITHUB_PATH}/{selected_folder_for_viewing}/{file}")
-                        st.success(f"File '{file}' renamed to '{new_name}'")
-                    else:
-                        st.error(f"Failed to rename file '{file}'.")
-                
-                # Delete file option
-                if st.button(f"Delete {file}"):
-                    delete_file_or_folder_from_github(f"{GITHUB_PATH}/{selected_folder_for_viewing}/{file}")
-                
-                st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html=True)
+            # Add Description option
+            description_data = st.text_input(f"Enter description for {file}")
+            if description_data and st.button(f"Add Description to {file}"):
+                handle_descriptions_for_files(selected_folder_for_viewing, file, description_data)
             
-            # Add description for the file
-            if st.button(f"Add Description for {file}"):
-                description = st.text_area(f"Enter description for {file}")
-                description_data = {"description": description or "No description available."}
-                descriptions_file_path = f"{selected_folder_for_viewing}/descriptions.json"
-                descriptions = {}
-
-                # Check if descriptions.json exists and create it if not
-                if descriptions_file_path in files:
-                    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{descriptions_file_path}"
-                    headers = {
-                        "Authorization": f"token {GITHUB_TOKEN}",
-                    }
-                    response = requests.get(url, headers=headers)
-                    if response.status_code == 200:
-                        descriptions = response.json().get("content", "")
-                        descriptions = base64.b64decode(descriptions).decode("utf-8")
-                        descriptions = json.loads(descriptions)  # Parse JSON content
-                descriptions[file] = description_data
-                encoded_descriptions = base64.b64encode(json.dumps(descriptions).encode()).decode("utf-8")
-
+            # Rename file option
+            new_name = st.text_input(f"Rename {file}", "")
+            if new_name and st.button(f"Rename {file}"):
+                new_file_url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{selected_folder_for_viewing}/{new_name}"
+                file_url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{selected_folder_for_viewing}/{file}"
+                encoded_contents = base64.b64encode(requests.get(file_url).content).decode("utf-8")
                 data = {
-                    "message": f"Update descriptions for {selected_folder_for_viewing}",
-                    "content": encoded_descriptions,
+                    "message": f"Rename {file} to {new_name}",
+                    "content": encoded_contents,
                 }
-                response = requests.put(url, json=data, headers=headers)
+                headers = {
+                    "Authorization": f"token {GITHUB_TOKEN}",
+                }
+                response = requests.put(new_file_url, json=data, headers=headers)
                 if response.status_code == 201:
-                    st.success(f"Description for '{file}' added successfully!")
+                    delete_file_or_folder_from_github(f"{GITHUB_PATH}/{selected_folder_for_viewing}/{file}")
+                    st.success(f"File '{file}' renamed to '{new_name}'")
+                    import time
+                    time.sleep(2)
+                    st.rerun()
                 else:
-                    st.error(f"Failed to add description for '{file}'.")
+                    st.error(f"Failed to rename file '{file}'.")
+            
+            # Delete file option
+            if st.button(f"Delete {file}"):
+                delete_file_or_folder_from_github(f"{GITHUB_PATH}/{selected_folder_for_viewing}/{file}")
+            st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
 
     # Step 4: Delete Folder (Warning: This will delete all files in the folder)
     st.subheader(":red[**Delete Folder**]")
@@ -236,46 +220,37 @@ def default_page():
     </h1>
     """, unsafe_allow_html=True)
 
-    # Search functionality for admin to enter a subject or search
     search_query = st.text_input("Search Subject Here...", type="password")
+
     if search_query == PASSWORD:
         st.session_state.page = "Admin Page"
-        st.success("Password correct! Redirecting to Admin Page...")        
+        st.success("Password correct! Redirecting to Admin Page...")
         st.rerun()
 
-    # Display available subjects (folders)
     folder_list = get_folders_from_github()
     if folder_list:
         st.subheader(":green[Select] **Subject** ***to View Files***")
         selected_folder = st.radio("*Select Subject to View Files*", folder_list)
 
-        st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html=True)
+        st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
         
         files = get_files_from_github(selected_folder)
         if files:
             st.subheader(f"Subject : :red[*{selected_folder}*]")
-            st.write("PYQ or Resources 😄")
-            st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html=True)
+            st.write("PYQ or Resources :smile:")
+            st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
             for file in files:
-                if file != "descriptions.json":  # Do not display the descriptions.json file
-                    st.write(file)
-                    description_file_url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/{GITHUB_PATH}/{selected_folder}/descriptions.json"
-                    try:
-                        response = requests.get(description_file_url)
-                        descriptions = response.json()
-                        if file in descriptions:
-                            st.write(f"Description: {descriptions[file].get('description', 'No description available.')}")
-                    except:
-                        st.write("Description: No description available.")
-                    
-                    file_url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/{GITHUB_PATH}/{selected_folder}/{file}"
-                    st.download_button(
-                        label=f"Download {file}",
-                        data=requests.get(file_url).content,
-                        file_name=file,
-                        mime="application/octet-stream"
-                    )
-                    st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html=True)
+                st.write(file)
+
+                file_url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/{GITHUB_PATH}/{selected_folder}/{file}"
+                st.download_button(
+                    label=f"Download {file}",
+                    data=requests.get(file_url).content,
+                    file_name=file,
+                    mime="application/octet-stream"
+                )
+                st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
+
     else:
         st.info("No subjects available at the moment.")
 
@@ -290,7 +265,8 @@ def main():
         admin_page()
     else:
         default_page()
-        st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html=True)
+        st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
+        st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
         st.write("Contact: [Email Us](mailto:mitmfirstyearpaper@gmail.com)")
 
 if __name__ == "__main__":
