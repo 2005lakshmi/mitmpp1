@@ -168,24 +168,33 @@ def admin_page():
             if new_name and st.button(f"Rename {file}"):
                 new_file_url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{selected_folder_for_viewing}/{new_name}"
                 file_url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{selected_folder_for_viewing}/{file}"
-                file_contents = requests.get(file_url).content
-                encoded_contents = base64.b64encode(file_contents).decode("utf-8")
-                data = {
-                    "message": f"Rename {file} to {new_name}",
-                    "content": encoded_contents,
-                }
-                headers = {
-                    "Authorization": f"token {GITHUB_TOKEN}",
-                }
-                response = requests.put(new_file_url, json=data, headers=headers)
-                if response.status_code == 201:
-                    delete_file_or_folder_from_github(f"{GITHUB_PATH}/{selected_folder_for_viewing}/{file}")
-                    st.success(f"File '{file}' renamed to '{new_name}'")
-                    import time
-                    time.sleep(2)
-                    st.rerun()
+                
+                # Fetching the original file's content
+                response = requests.get(file_url)
+                if response.status_code == 200:
+                    file_contents = response.content
+                    encoded_contents = base64.b64encode(file_contents).decode("utf-8")
+                    
+                    # Upload the file with the new name
+                    data = {
+                        "message": f"Rename {file} to {new_name}",
+                        "content": encoded_contents,
+                    }
+                    headers = {
+                        "Authorization": f"token {GITHUB_TOKEN}",
+                    }
+                    response = requests.put(new_file_url, json=data, headers=headers)
+                    if response.status_code == 201:
+                        # Delete the old file
+                        delete_file_or_folder_from_github(f"{GITHUB_PATH}/{selected_folder_for_viewing}/{file}")
+                        st.success(f"File '{file}' renamed to '{new_name}'")
+                        import time
+                        time.sleep(2)
+                        st.rerun()
+                    else:
+                        st.error(f"Failed to rename file '{file}'.")
                 else:
-                    st.error(f"Failed to rename file '{file}'.")
+                    st.error(f"Failed to fetch content for renaming '{file}'.")
             
             # Delete file option
             if st.button(f"Delete {file}"):
@@ -195,12 +204,12 @@ def admin_page():
 # Default page to display files from GitHub (as subjects)
 def default_page():
 
-    st.markdown("""
-    <h1>
+    st.markdown(""" 
+    <h1> 
         <span style="color: red;">Previous</span> Papers 
         <span style="font-size: 18px;">   1stYear Eng...</span> 
-        <span style="color: green;">(2023-24)</span>
-    </h1>
+        <span style="color: green;">(2023-24)</span> 
+    </h1> 
     """, unsafe_allow_html=True)
 
     # Search functionality for admin to enter a subject or search
