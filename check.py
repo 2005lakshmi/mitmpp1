@@ -134,58 +134,31 @@ def update_description(folder_name, file_name, description):
         st.error(f"Failed to update description for '{file_name}'.")
         st.write(response.json())
 
-# Default page to display files from GitHub (as subjects)
-def default_page():
-    st.markdown(""" 
-    <h1>
-        <span style="color: red;">Previous</span> Papers 
-        <span style="font-size: 18px;">   1stYear Eng...</span> 
-        <span style="color: green;">(2023-24)</span>
-    </h1>
-    """, unsafe_allow_html=True)
-
-    search_query = st.text_input("Search Subject Here...", type="password")
-
-    if search_query == PASSWORD:
-        st.session_state.page = "Admin Page"
-        st.success("Password correct! Redirecting to Admin Page...")
-        st.rerun()
-
-    folder_list = get_folders_from_github()
-    if folder_list:
-        st.subheader(":green[Select] **Subject** ***to View Files***")
-        selected_folder = st.radio("*Select Subject to View Files*", folder_list)
-
-        st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html=True)
+# Function to delete file or folder from GitHub
+def delete_file_or_folder_from_github(file_path):
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{file_path}"
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+    }
+    
+    response = requests.get(url, headers=headers)
+    
+    if response.status_code == 200:
+        sha = response.json()['sha']
+        delete_data = {
+            "message": f"Delete {file_path}",
+            "sha": sha,
+        }
         
-        files = get_files_from_github(selected_folder)
-        if files:
-            st.subheader(f"Subject : :red[*{selected_folder}*]")
-            st.write("PYQ or Resources :smile:")
-            st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html=True)
-            
-            descriptions = get_descriptions(selected_folder)
-
-            for file in files:
-                if file != "descriptions.json":  # Don't display the descriptions.json file
-                    st.write(file)
-
-                    # Display description if available
-                    if file in descriptions:
-                        st.write(f"**Description**: {descriptions[file]}")
-
-                    # Display file download option
-                    file_url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/{GITHUB_PATH}/{selected_folder}/{file}"
-                    st.download_button(
-                        label=f"Download {file}",
-                        data=requests.get(file_url).content,
-                        file_name=file,
-                        mime="application/octet-stream"
-                    )
-                    st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html=True)
-
+        delete_response = requests.delete(url, json=delete_data, headers=headers)
+        
+        if delete_response.status_code == 200:
+            st.success(f"File/Folder '{file_path}' deleted successfully!")
+        else:
+            st.error(f"Failed to delete file/folder '{file_path}'.")
+            st.write(delete_response.json())
     else:
-        st.info("No subjects available at the moment.")
+        st.error(f"Failed to fetch file/folder details to delete '{file_path}'.")
 
 # Admin page to upload files, rename, and delete files or folders
 def admin_page():
@@ -233,6 +206,10 @@ def admin_page():
                 }
                 response = requests.put(new_file_url, json=data, headers=headers)
                 if response.status_code == 201:
+                    # Update descriptions in JSON file after renaming
+                    descriptions = get_descriptions(selected_folder_for_viewing)
+                    descriptions[new_name] = descriptions.pop(file, None)
+                    update_description(selected_folder_for_viewing, "descriptions.json", descriptions)
                     delete_file_or_folder_from_github(f"{GITHUB_PATH}/{selected_folder_for_viewing}/{file}")
                     st.success(f"File '{file}' renamed to '{new_name}'")
                     time.sleep(2)  # Wait for 2 seconds
@@ -243,38 +220,17 @@ def admin_page():
             # Delete file option
             if st.button(f"Delete {file}"):
                 delete_file_or_folder_from_github(f"{GITHUB_PATH}/{selected_folder_for_viewing}/{file}")
+                
+                # Remove from descriptions JSON after deleting
+                descriptions = get_descriptions(selected_folder_for_viewing)
+                descriptions.pop(file, None)
+                update_description(selected_folder_for_viewing, "descriptions.json", descriptions)
+                
                 st.success(f"File '{file}' deleted successfully.")
                 time.sleep(2)  # Wait for 2 seconds
                 st.rerun()  # Refresh the page after deletion
 
-            # Description input
-            descriptions = get_descriptions(selected_folder_for_viewing)
-            if file != "descriptions.json":  # Don't display descriptions.json file
-                st.write(file)
-
-                # Display description if available
-                if file in descriptions:
-                    st.write(f"**Description**: {descriptions[file]}")
-
-                new_description = st.text_area(f"Enter description for {file}", value=descriptions.get(file, ""))
-
-                # Update description button
-                if new_description and st.button(f"Update Description for {file}"):
-                    update_description(selected_folder_for_viewing, file, new_description)
-                    time.sleep(2)  # Wait for 2 seconds after updating
-                    st.rerun()  # Refresh the page after description update
-
             st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html=True)
-
-    # Step 4: Delete Folder (Warning: This will delete all files in the folder)
-    st.subheader(":red[**Delete Folder**]")
-    folder_to_delete = st.selectbox("Select a folder to delete", get_folders_from_github())
-    if folder_to_delete:
-        if st.button(f"Delete Folder '{folder_to_delete}'"):
-            delete_file_or_folder_from_github(f"{GITHUB_PATH}/{folder_to_delete}")
-            st.success(f"Folder '{folder_to_delete}' deleted successfully.")
-            time.sleep(2)  # Wait for 2 seconds
-            st.rerun()  # Refresh the page after folder deletion
 
 # Main function for page navigation
 def main():
@@ -286,9 +242,6 @@ def main():
     if page == "Admin Page":
         admin_page()
     else:
-        default_page()
-        st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
-        st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
         st.write("Contact: [GITHUB REPO](https://github.com/2005lakshmi/mitmpp1)")
 
 if __name__ == "__main__":
