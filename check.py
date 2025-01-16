@@ -231,22 +231,35 @@ def default_page():
     # Display available subjects (folders)
     folder_list = get_folders_from_github()
     if folder_list:
+        st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
+
         st.subheader(":green[Select] **Subject** ***to View Files***")
         selected_folder = st.radio("*Select Subject to View Files*", folder_list)
+
+        st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
         
         files = get_files_from_github(selected_folder)
         if files:
             st.subheader(f"Subject : :red[*{selected_folder}*]")
             st.write("PYQ or Resources :smile:")
+            st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
             for file in files:
                 st.write(file)
 
-                # For PNG files after renaming
-                if file.lower().endswith('.png'):
+                # Determine the file extension to set the correct MIME type
+                file_extension = file.split('.')[-1].lower()
+                if file_extension in ['jpg', 'jpeg']:
+                    mime_type = 'image/jpeg'
+                elif file_extension == 'png':
                     mime_type = 'image/png'
+                elif file_extension == 'gif':
+                    mime_type = 'image/gif'
+                elif file_extension == 'pdf':
+                    mime_type = 'application/pdf'
                 else:
-                    mime_type = 'application/octet-stream' 
+                    mime_type = 'application/octet-stream'  # Default MIME type for non-image files
 
+                # Image/PDF file download
                 file_url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/{GITHUB_PATH}/{selected_folder}/{file}"
                 st.download_button(
                     label=f"Download {file}",
@@ -254,10 +267,11 @@ def default_page():
                     file_name=file,
                     mime=mime_type
                 )
+                st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
 
     else:
         st.info("No subjects available at the moment.")
-  
+
 # Main function for page navigation
 def main():
     if 'page' not in st.session_state:
@@ -269,6 +283,7 @@ def main():
         admin_page()
     else:
         default_page()
+        st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
         st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
         st.write("Contact: [Email Us](mailto:mitmfirstyearpaper@gmail.com)")
 
