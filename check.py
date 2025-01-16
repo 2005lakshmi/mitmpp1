@@ -243,6 +243,18 @@ def admin_page():
                 else:
                     st.error(f"Failed to rename file '{file}'.")
 
+            # Add description to the file
+            if st.button(f"Add Description to {file}"):
+                current_desc = get_or_create_description_json(selected_folder_for_viewing)
+                new_description = st.text_area(f"Enter Description for {file}", value=current_desc if current_desc else "")
+                
+                if st.button(f"Save Description for {file}"):
+                    if new_description:
+                        description_data = {"description": new_description}
+                        save_description_json(selected_folder_for_viewing, description_data)
+                    else:
+                        st.warning("Please enter a description.")
+
             # Delete file option
             if st.button(f"Delete {file}"):
                 delete_file_or_folder_from_github(f"{GITHUB_PATH}/{selected_folder_for_viewing}/{file}")
