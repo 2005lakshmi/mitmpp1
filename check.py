@@ -5,8 +5,6 @@ import streamlit as st
 
 st.cache_data.clear()
 
-
-
 # GitHub token and repository details from secrets.toml
 GITHUB_TOKEN = st.secrets["github"]["token"]
 GITHUB_REPO = "2005lakshmi/mitmpp1"  # Replace with your GitHub repository name
@@ -144,12 +142,45 @@ def delete_file_or_folder_from_github(file_or_folder_path):
         st.error(f"Failed to fetch file/folder info. Status code: {response.status_code}")
         st.write(response.json())
 
+# Fix to rename the file: Download, upload with new name, delete old file
+def rename_file(folder_name, old_name, new_name):
+    # Step 1: Download the file content from GitHub
+    file_url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/{GITHUB_PATH}/{folder_name}/{old_name}"
+    response = requests.get(file_url)
+
+    if response.status_code == 200:
+        file_content = response.content  # Get the raw file content
+
+        # Step 2: Encode the file content to base64
+        encoded_content = base64.b64encode(file_content).decode("utf-8")
+
+        # Step 3: Upload the file with the new name
+        file_url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{folder_name}/{new_name}"
+        data = {
+            "message": f"Rename {old_name} to {new_name}",
+            "content": encoded_content,
+        }
+        headers = {
+            "Authorization": f"token {GITHUB_TOKEN}",
+        }
+
+        response = requests.put(file_url, json=data, headers=headers)
+
+        if response.status_code == 201:
+            st.success(f"File '{old_name}' renamed to '{new_name}' successfully!")
+            # Step 4: Delete the old file
+            delete_file_or_folder_from_github(f"{GITHUB_PATH}/{folder_name}/{old_name}")
+        else:
+            st.error(f"Failed to rename file '{old_name}' to '{new_name}'.")
+    else:
+        st.error(f"Failed to download file '{old_name}'. Status code: {response.status_code}")
+
 # Admin page to upload files, rename, and delete files or folders
 def admin_page():
     st.title(":blue[Upload] :green[Files]")
 
     # Step 1: Folder Creation
-    st.subheader("Create Folder(**subject**)")
+    st.subheader("Create Folder(**subject**)") 
     folder_name = st.text_input("Enter folder name to create")
     if st.button("Create Folder"):
         if folder_name:
@@ -177,26 +208,8 @@ def admin_page():
             # Rename file option
             new_name = st.text_input(f"Rename {file}", "")
             if new_name and st.button(f"Rename {file}"):
-                new_file_url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{selected_folder_for_viewing}/{new_name}"
-                file_url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{selected_folder_for_viewing}/{file}"
-                encoded_contents = base64.b64encode(requests.get(file_url).content).decode("utf-8")
-                data = {
-                    "message": f"Rename {file} to {new_name}",
-                    "content": encoded_contents,
-                }
-                headers = {
-                    "Authorization": f"token {GITHUB_TOKEN}",
-                }
-                response = requests.put(new_file_url, json=data, headers=headers)
-                if response.status_code == 201:
-                    delete_file_or_folder_from_github(f"{GITHUB_PATH}/{selected_folder_for_viewing}/{file}")
-                    st.success(f"File '{file}' renamed to '{new_name}'")
-                    import time
-                    time.sleep(2)
-                    st.rerun()
-                else:
-                    st.error(f"Failed to rename file '{file}'.")
-            
+                rename_file(selected_folder_for_viewing, file, new_name)
+
             # Delete file option
             if st.button(f"Delete {file}"):
                 delete_file_or_folder_from_github(f"{GITHUB_PATH}/{selected_folder_for_viewing}/{file}")
