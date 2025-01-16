@@ -5,8 +5,6 @@ import streamlit as st
 
 st.cache_data.clear()
 
-
-
 # GitHub token and repository details from secrets.toml
 GITHUB_TOKEN = st.secrets["github"]["token"]
 GITHUB_REPO = "2005lakshmi/mitmpp1"  # Replace with your GitHub repository name
@@ -149,7 +147,7 @@ def admin_page():
     st.title(":blue[Upload] :green[Files]")
 
     # Step 1: Folder Creation
-    st.subheader("Create Folder(**subject**)")
+    st.subheader("Create Folder(**subject**)")    
     folder_name = st.text_input("Enter folder name to create")
     if st.button("Create Folder"):
         if folder_name:
@@ -201,6 +199,7 @@ def admin_page():
             if st.button(f"Delete {file}"):
                 delete_file_or_folder_from_github(f"{GITHUB_PATH}/{selected_folder_for_viewing}/{file}")
             st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
+            
     # Step 4: Delete Folder (Warning: This will delete all files in the folder)
     st.subheader(":red[**Delete Folder**]")
     folder_to_delete = st.selectbox("Select a folder to delete", get_folders_from_github())
@@ -211,7 +210,6 @@ def admin_page():
 # Default page to display files from GitHub (as subjects)
 def default_page():
 
-    #st.title(":blue[Previous] Papers of 1,2 sem (Engineering) :green[(2023-29)]")
     st.markdown("""
     <h1>
         <span style="color: red;">Previous</span> Papers 
@@ -233,34 +231,22 @@ def default_page():
     # Display available subjects (folders)
     folder_list = get_folders_from_github()
     if folder_list:
-        # Radio button for folder selection (only one folder at a time)
-        st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
-
         st.subheader(":green[Select] **Subject** ***to View Files***")
         selected_folder = st.radio("*Select Subject to View Files*", folder_list)
-
-        st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
         
         files = get_files_from_github(selected_folder)
         if files:
             st.subheader(f"Subject : :red[*{selected_folder}*]")
             st.write("PYQ or Resources :smile:")
-            st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
             for file in files:
                 st.write(file)
 
-                # Determine the file extension to set the correct MIME type
-                file_extension = file.split('.')[-1].lower()
-                if file_extension in ['jpg', 'jpeg']:
-                    mime_type = 'image/jpeg'
-                elif file_extension == 'png':
+                # For PNG files after renaming
+                if file.lower().endswith('.png'):
                     mime_type = 'image/png'
-                elif file_extension == 'gif':
-                    mime_type = 'image/gif'
                 else:
-                    mime_type = 'application/octet-stream'  # Default MIME type for non-image files
+                    mime_type = 'application/octet-stream' 
 
-                # Image file download
                 file_url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/{GITHUB_PATH}/{selected_folder}/{file}"
                 st.download_button(
                     label=f"Download {file}",
@@ -268,7 +254,6 @@ def default_page():
                     file_name=file,
                     mime=mime_type
                 )
-                st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
 
     else:
         st.info("No subjects available at the moment.")
@@ -284,7 +269,6 @@ def main():
         admin_page()
     else:
         default_page()
-        st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
         st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
         st.write("Contact: [Email Us](mailto:mitmfirstyearpaper@gmail.com)")
 
