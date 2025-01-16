@@ -12,54 +12,6 @@ GITHUB_PATH = "uploaded_files"  # The folder where files will be stored on GitHu
 
 PASSWORD = st.secrets["general"]["password"]  # Password from secrets.toml
 
-# Function to create a folder on GitHub by uploading a null.txt file (workaround)
-def create_folder_on_github(folder_name):
-    folder_name = folder_name.strip('/')
-    file_url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{folder_name}/null.txt"
-    
-    null_content = "null"
-    encoded_contents = base64.b64encode(null_content.encode()).decode("utf-8")
-
-    data = {
-        "message": f"Create folder {folder_name} with a null.txt file",
-        "content": encoded_contents,
-    }
-    headers = {
-        "Authorization": f"token {GITHUB_TOKEN}",
-    }
-
-    response = requests.put(file_url, json=data, headers=headers)
-    
-    if response.status_code == 201:
-        st.success(f"Folder '{folder_name}' created successfully on GitHub!")
-    else:
-        st.error(f"Failed to create folder '{folder_name}'. Status code: {response.status_code}")
-        st.write(response.json())
-
-# Function to upload files to a specific folder on GitHub
-def upload_files_to_github(folder_name):
-    uploaded_files = st.file_uploader("Choose files", accept_multiple_files=True)
-    if uploaded_files:
-        for uploaded_file in uploaded_files:
-            file_url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{folder_name}/{uploaded_file.name}"
-            file_contents = uploaded_file.getbuffer()
-            encoded_contents = base64.b64encode(file_contents).decode("utf-8")
-            
-            data = {
-                "message": f"Add {uploaded_file.name} to {folder_name}",
-                "content": encoded_contents,
-            }
-            headers = {
-                "Authorization": f"token {GITHUB_TOKEN}",
-            }
-
-            response = requests.put(file_url, json=data, headers=headers)
-            if response.status_code == 201:
-                st.success(f"File '{uploaded_file.name}' uploaded successfully to {folder_name}!")
-            else:
-                st.error(f"Failed to upload file '{uploaded_file.name}' to {folder_name}.")
-                st.write(response.json())
-
 # Function to get the list of folders inside 'uploaded_files' on GitHub
 def get_folders_from_github():
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}"
@@ -74,7 +26,6 @@ def get_folders_from_github():
         return folders
     else:
         st.error(f"Failed to fetch folders from GitHub. Status code: {response.status_code}")
-        st.write(response.json())
         return []
 
 # Function to get the list of files in a specific folder on GitHub
@@ -134,37 +85,33 @@ def update_description(folder_name, file_name, description):
         st.error(f"Failed to update description for '{file_name}'.")
         st.write(response.json())
 
-# Function to delete file or folder from GitHub
+# Function to delete a file or folder from GitHub
 def delete_file_or_folder_from_github(file_path):
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{file_path}"
     headers = {
         "Authorization": f"token {GITHUB_TOKEN}",
     }
-    
+
     response = requests.get(url, headers=headers)
-    
     if response.status_code == 200:
-        sha = response.json()['sha']
-        delete_data = {
+        sha = response.json()["sha"]
+        data = {
             "message": f"Delete {file_path}",
-            "sha": sha,
+            "sha": sha
         }
-        
-        delete_response = requests.delete(url, json=delete_data, headers=headers)
-        
-        if delete_response.status_code == 200:
-            st.success(f"File/Folder '{file_path}' deleted successfully!")
+        response = requests.delete(url, json=data, headers=headers)
+        if response.status_code == 200:
+            st.success(f"Deleted {file_path} successfully.")
         else:
-            st.error(f"Failed to delete file/folder '{file_path}'.")
-            st.write(delete_response.json())
+            st.error(f"Failed to delete {file_path}.")
     else:
-        st.error(f"Failed to fetch file/folder details to delete '{file_path}'.")
+        st.error(f"Failed to fetch file details for deletion. Status code: {response.status_code}")
 
 # Admin page to upload files, rename, and delete files or folders
 def admin_page():
     st.title(":blue[Upload] :green[Files]")
 
-    # Step 1: Folder Creation
+    # Step 1: Folder Creation (Not changing this part)
     st.subheader("Create Folder(**subject**)") 
     folder_name = st.text_input("Enter folder name to create")
     if st.button("Create Folder"):
@@ -173,7 +120,7 @@ def admin_page():
         else:
             st.warning("Please enter a valid folder name.")
 
-    # Step 2: Upload Files
+    # Step 2: Upload Files (Not changing this part)
     st.subheader("**Upload Files to a Folder(subject)**")
     folder_name_to_upload = st.selectbox("*Select folder* **to upload files**", get_folders_from_github())
     if folder_name_to_upload:
@@ -206,12 +153,15 @@ def admin_page():
                 }
                 response = requests.put(new_file_url, json=data, headers=headers)
                 if response.status_code == 201:
-                    # Update descriptions in JSON file after renaming
-                    descriptions = get_descriptions(selected_folder_for_viewing)
-                    descriptions[new_name] = descriptions.pop(file, None)
-                    update_description(selected_folder_for_viewing, "descriptions.json", descriptions)
                     delete_file_or_folder_from_github(f"{GITHUB_PATH}/{selected_folder_for_viewing}/{file}")
                     st.success(f"File '{file}' renamed to '{new_name}'")
+
+                    # Update the description in descriptions.json
+                    descriptions = get_descriptions(selected_folder_for_viewing)
+                    if file in descriptions:
+                        description = descriptions[file]
+                        update_description(selected_folder_for_viewing, new_name, description)
+
                     time.sleep(2)  # Wait for 2 seconds
                     st.rerun()  # Refresh the page after renaming
                 else:
@@ -220,13 +170,15 @@ def admin_page():
             # Delete file option
             if st.button(f"Delete {file}"):
                 delete_file_or_folder_from_github(f"{GITHUB_PATH}/{selected_folder_for_viewing}/{file}")
-                
-                # Remove from descriptions JSON after deleting
-                descriptions = get_descriptions(selected_folder_for_viewing)
-                descriptions.pop(file, None)
-                update_description(selected_folder_for_viewing, "descriptions.json", descriptions)
-                
                 st.success(f"File '{file}' deleted successfully.")
+                
+                # Remove from descriptions.json
+                descriptions = get_descriptions(selected_folder_for_viewing)
+                if file in descriptions:
+                    del descriptions[file]
+                    encoded_descriptions = base64.b64encode(json.dumps(descriptions).encode()).decode("utf-8")
+                    update_description(selected_folder_for_viewing, file, None)
+
                 time.sleep(2)  # Wait for 2 seconds
                 st.rerun()  # Refresh the page after deletion
 
@@ -242,6 +194,9 @@ def main():
     if page == "Admin Page":
         admin_page()
     else:
+        default_page()  # Show Default Page (Search page for subjects)
+        st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html=True)
+        st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html=True)
         st.write("Contact: [GITHUB REPO](https://github.com/2005lakshmi/mitmpp1)")
 
 if __name__ == "__main__":
