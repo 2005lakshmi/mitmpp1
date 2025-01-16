@@ -14,12 +14,8 @@ PASSWORD = st.secrets["general"]["password"]  # Password from secrets.toml
 
 # Function to create a folder on GitHub by uploading a null.txt file (workaround)
 def create_folder_on_github(folder_name):
-    # Remove any trailing slashes from the folder name
     folder_name = folder_name.strip('/')
-
-    # URL to create a file inside the folder, if the folder doesn't exist, GitHub will create it
     file_url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{folder_name}/null.txt"
-    
     null_content = "null"
     encoded_contents = base64.b64encode(null_content.encode()).decode("utf-8")
 
@@ -73,7 +69,6 @@ def get_folders_from_github():
     response = requests.get(url, headers=headers)
     if response.status_code == 200:
         files = response.json()
-        # Filter only folders (type == "dir")
         folders = [file['name'] for file in files if file['type'] == "dir"]
         return folders
     else:
@@ -108,18 +103,14 @@ def delete_file_or_folder_from_github(file_or_folder_path):
     if response.status_code == 200:
         file_info = response.json()
         
-        # If response is a list (folder containing files)
         if isinstance(file_info, list):
-            # This is a folder, and we need to delete its contents first
             for file in file_info:
                 if file['type'] == 'file':  # Only delete files, not directories
                     file_path = file['path']
                     delete_file_or_folder_from_github(file_path)
-            # Now delete the folder itself (this will also remove its contents)
             st.success(f"Folder '{file_or_folder_path}' is empty now.")
             return
         
-        # Now handle if the response is a dictionary for a single file
         if isinstance(file_info, dict) and 'sha' in file_info:
             sha = file_info['sha']
             data = {
@@ -177,7 +168,8 @@ def admin_page():
             if new_name and st.button(f"Rename {file}"):
                 new_file_url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{selected_folder_for_viewing}/{new_name}"
                 file_url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}/{selected_folder_for_viewing}/{file}"
-                encoded_contents = base64.b64encode(requests.get(file_url).content).decode("utf-8")
+                file_contents = requests.get(file_url).content
+                encoded_contents = base64.b64encode(file_contents).decode("utf-8")
                 data = {
                     "message": f"Rename {file} to {new_name}",
                     "content": encoded_contents,
@@ -199,14 +191,7 @@ def admin_page():
             if st.button(f"Delete {file}"):
                 delete_file_or_folder_from_github(f"{GITHUB_PATH}/{selected_folder_for_viewing}/{file}")
             st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
-            
-    # Step 4: Delete Folder (Warning: This will delete all files in the folder)
-    st.subheader(":red[**Delete Folder**]")
-    folder_to_delete = st.selectbox("Select a folder to delete", get_folders_from_github())
-    if folder_to_delete:
-        if st.button(f"Delete Folder '{folder_to_delete}'"):
-            delete_file_or_folder_from_github(f"{GITHUB_PATH}/{folder_to_delete}")
-            
+
 # Default page to display files from GitHub (as subjects)
 def default_page():
 
@@ -218,7 +203,6 @@ def default_page():
     </h1>
     """, unsafe_allow_html=True)
 
-    
     # Search functionality for admin to enter a subject or search
     search_query = st.text_input("Search Subject Here...", type="password")
 
@@ -231,8 +215,6 @@ def default_page():
     # Display available subjects (folders)
     folder_list = get_folders_from_github()
     if folder_list:
-        st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
-
         st.subheader(":green[Select] **Subject** ***to View Files***")
         selected_folder = st.radio("*Select Subject to View Files*", folder_list)
 
@@ -252,12 +234,10 @@ def default_page():
                     mime_type = 'image/jpeg'
                 elif file_extension == 'png':
                     mime_type = 'image/png'
-                elif file_extension == 'gif':
-                    mime_type = 'image/gif'
                 elif file_extension == 'pdf':
                     mime_type = 'application/pdf'
                 else:
-                    mime_type = 'application/octet-stream'  # Default MIME type for non-image files
+                    mime_type = 'application/octet-stream'
 
                 # Image/PDF file download
                 file_url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/{GITHUB_PATH}/{selected_folder}/{file}"
@@ -268,7 +248,6 @@ def default_page():
                     mime=mime_type
                 )
                 st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
-
     else:
         st.info("No subjects available at the moment.")
 
@@ -283,9 +262,6 @@ def main():
         admin_page()
     else:
         default_page()
-        st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
-        st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
-        st.write("Contact: [Email Us](mailto:mitmfirstyearpaper@gmail.com)")
 
 if __name__ == "__main__":
     main()
