@@ -3,6 +3,7 @@ import base64
 import json
 import requests
 import streamlit as st
+import time
 
 # GitHub token and repository details from secrets.toml
 GITHUB_TOKEN = st.secrets["github"]["token"]
@@ -135,7 +136,7 @@ def update_description(folder_name, file_name, description):
 
 # Default page to display files from GitHub (as subjects)
 def default_page():
-    st.markdown("""
+    st.markdown(""" 
     <h1>
         <span style="color: red;">Previous</span> Papers 
         <span style="font-size: 18px;">   1stYear Eng...</span> 
@@ -172,12 +173,8 @@ def default_page():
                     # Display description if available
                     if file in descriptions:
                         st.write(f"**Description**: {descriptions[file]}")
-                    
-                    # Add or edit description for the file
-                    new_description = st.text_input(f"Enter description for {file}", value=descriptions.get(file, ""))
-                    if new_description and st.button(f"Update Description for {file}"):
-                        update_description(selected_folder, file, new_description)
 
+                    # Display file download option
                     file_url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/{GITHUB_PATH}/{selected_folder}/{file}"
                     st.download_button(
                         label=f"Download {file}",
@@ -211,6 +208,7 @@ def admin_page():
 
     # Step 3: View Files in Selected Folder
     st.subheader(":blue[View and Manage Files]")
+
     folder_list = get_folders_from_github()
     selected_folder_for_viewing = st.selectbox("Select folder(**subject**)", folder_list)
     
@@ -237,24 +235,47 @@ def admin_page():
                 if response.status_code == 201:
                     delete_file_or_folder_from_github(f"{GITHUB_PATH}/{selected_folder_for_viewing}/{file}")
                     st.success(f"File '{file}' renamed to '{new_name}'")
-                    import time
-                    time.sleep(2)
-                    st.rerun()
+                    time.sleep(2)  # Wait for 2 seconds
+                    st.rerun()  # Refresh the page after renaming
                 else:
                     st.error(f"Failed to rename file '{file}'.")
             
             # Delete file option
             if st.button(f"Delete {file}"):
                 delete_file_or_folder_from_github(f"{GITHUB_PATH}/{selected_folder_for_viewing}/{file}")
+                st.success(f"File '{file}' deleted successfully.")
+                time.sleep(2)  # Wait for 2 seconds
+                st.rerun()  # Refresh the page after deletion
+
+            # Description input
+            descriptions = get_descriptions(selected_folder_for_viewing)
+            if file != "descriptions.json":  # Don't display descriptions.json file
+                st.write(file)
+
+                # Display description if available
+                if file in descriptions:
+                    st.write(f"**Description**: {descriptions[file]}")
+
+                new_description = st.text_area(f"Enter description for {file}", value=descriptions.get(file, ""))
+
+                # Update description button
+                if new_description and st.button(f"Update Description for {file}"):
+                    update_description(selected_folder_for_viewing, file, new_description)
+                    time.sleep(2)  # Wait for 2 seconds after updating
+                    st.rerun()  # Refresh the page after description update
+
             st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html=True)
-    
+
     # Step 4: Delete Folder (Warning: This will delete all files in the folder)
     st.subheader(":red[**Delete Folder**]")
     folder_to_delete = st.selectbox("Select a folder to delete", get_folders_from_github())
     if folder_to_delete:
         if st.button(f"Delete Folder '{folder_to_delete}'"):
             delete_file_or_folder_from_github(f"{GITHUB_PATH}/{folder_to_delete}")
-            
+            st.success(f"Folder '{folder_to_delete}' deleted successfully.")
+            time.sleep(2)  # Wait for 2 seconds
+            st.rerun()  # Refresh the page after folder deletion
+
 # Main function for page navigation
 def main():
     if 'page' not in st.session_state:
@@ -268,7 +289,7 @@ def main():
         default_page()
         st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
         st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
-        st.write("Contact: [Email Us](mailto:mitmfirstyearpaper@gmail.com)")
+        st.write("Contact: [GITHUB REPO](https://github.com/2005lakshmi/mitmpp1)")
 
 if __name__ == "__main__":
     main()
