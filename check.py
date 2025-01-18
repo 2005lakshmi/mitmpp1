@@ -299,7 +299,7 @@ def main():
         default_page()
         st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
         st.markdown("<hr style = 'border : 1px solid gray;'>", unsafe_allow_html = True)
-        st.write("Contact: [Email Us](mailto:lakshmi.luckylnj3@gmail.com)")
+        st.write("Feedback/Contact: [Email](mailto:lakshmi.luckylnj3@gmail.com)")
 
 if __name__ == "__main__":
     main()
