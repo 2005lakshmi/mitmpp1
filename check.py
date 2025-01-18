@@ -229,7 +229,7 @@ def default_page():
     <h1>
         MITM <span style="color: red;">Previous</span> Papers 
         <span style="font-size: 18px;">   1stYear Eng...</span> 
-        <span style="color: green;font-size: smaller;">of (2023-24)</span>
+        <span style="color: green;font-size: smaller;">(2023-24)</span>
     </h1>
     """, unsafe_allow_html=True)
 
