@@ -227,7 +227,7 @@ def default_page():
     #st.title(":blue[Previous] Papers of 1,2 sem (Engineering) :green[(2023-29)]")
     st.markdown("""
     <h1>
-        MITM <span style="color: red;">Previous</span> Papers 
+        MITM <span style="color: red;">Previous</span> <span style="color: green;font-size: 8px;">[IA,SEE]</span> Papers 
         <span style="font-size: 18px;">   1stYear Eng...</span> 
         <span style="color: green;font-size: 8px;">(of 2023-24)</span>
     </h1>
